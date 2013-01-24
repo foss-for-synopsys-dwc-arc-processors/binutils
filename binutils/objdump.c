@@ -216,7 +216,8 @@ usage (FILE *stream, int status)
   -W[lLiaprmfFsoRt] or\n\
   --dwarf[=rawline,=decodedline,=info,=abbrev,=pubnames,=aranges,=macro,=frames,\n\
           =frames-interp,=str,=loc,=Ranges,=pubtypes,\n\
-          =gdb_index,=trace_info,=trace_abbrev,=trace_aranges]\n\
+          =gdb_index,=trace_info,=trace_abbrev,=trace_aranges,\n\
+          =addr,=cu_index]\n\
                            Display DWARF info in the file\n\
   -t, --syms               Display the contents of the symbol table(s)\n\
   -T, --dynamic-syms       Display the contents of the dynamic symbol table\n\
@@ -2272,13 +2273,7 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
 
   if (is_relocatable && debug_displays [debug].relocate)
     {
-      /* We want to relocate the data we've already read (and
-         decompressed), so we store a pointer to the data in
-         the bfd_section, and tell it that the contents are
-         already in memory.  */
-      sec->contents = section->start;
-      sec->flags |= SEC_IN_MEMORY;
-      sec->size = section->size;
+      bfd_cache_section_contents (sec, section->start);
 
       ret = bfd_simple_get_relocated_section_contents (abfd,
 						       sec,
@@ -2398,6 +2393,8 @@ dump_dwarf (bfd *abfd)
 	{
 	case bfd_mach_x86_64:
 	case bfd_mach_x86_64_intel_syntax:
+	case bfd_mach_x64_32:
+	case bfd_mach_x64_32_intel_syntax:
 	  init_dwarf_regnames_x86_64 ();
 	  break;
 
@@ -2654,7 +2651,7 @@ dump_target_specific (bfd *abfd)
     if ((*desc)->filter (abfd))
       break;
 
-  if (desc == NULL)
+  if (*desc == NULL)
     {
       non_fatal (_("option -P/--private not supported by this file"));
       return;
@@ -3215,8 +3212,6 @@ dump_bfd (bfd *abfd)
     dump_target_specific (abfd);
   if (! dump_debugging_tags && ! suppress_bfd_header)
     putchar ('\n');
-  if (dump_section_headers)
-    dump_headers (abfd);
 
   if (dump_symtab
       || dump_reloc_info
@@ -3224,6 +3219,10 @@ dump_bfd (bfd *abfd)
       || dump_debugging
       || dump_dwarf_section_info)
     syms = slurp_symtab (abfd);
+
+  if (dump_section_headers)
+    dump_headers (abfd);
+
   if (dump_dynamic_symtab || dump_dynamic_reloc_info
       || (disassemble && bfd_get_dynamic_symtab_upper_bound (abfd) > 0))
     dynsyms = slurp_dynamic_symtab (abfd);

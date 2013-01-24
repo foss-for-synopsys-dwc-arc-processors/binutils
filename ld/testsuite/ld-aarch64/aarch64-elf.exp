@@ -78,7 +78,12 @@ run_dump_test "emit-relocs-286"
 run_dump_test "emit-relocs-286-bad"
 # 287-298 are not done yet
 run_dump_test "emit-relocs-299"
-# 300-310 are not done yet
+# 300-308 are not done yet
+run_dump_test "emit-relocs-309-up"
+run_dump_test "emit-relocs-309-low"
+run_dump_test "emit-relocs-309-up-bad"
+run_dump_test "emit-relocs-309-low-bad"
+# 310 not done yet
 run_dump_test "emit-relocs-311"
 run_dump_test "emit-relocs-312"
 
@@ -103,3 +108,4 @@ run_dump_test "tls-relax-gdesc-ie-2"
 run_dump_test "tls-relax-gdesc-le-2"
 run_dump_test "tls-relax-ie-le-2"
 run_dump_test "tls-relax-ie-le-3"
+run_dump_test "tlsle-symbol-offset"

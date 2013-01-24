@@ -2288,7 +2288,7 @@ elf_cris_finish_dynamic_symbol (bfd *output_bfd,
     }
 
   /* Mark _DYNAMIC and _GLOBAL_OFFSET_TABLE_ as absolute.  */
-  if (strcmp (h->root.root.string, "_DYNAMIC") == 0
+  if (h == elf_hash_table (info)->hdynamic
       || h == elf_hash_table (info)->hgot)
     sym->st_shndx = SHN_ABS;
 
@@ -2698,7 +2698,7 @@ cris_elf_plt_sym_val (bfd_vma i ATTRIBUTE_UNUSED, const asection *plt,
     {
       bfd_size_type got_offset;
       bfd_byte gotoffs_raw[4];
-      
+
       if (!bfd_get_section_contents (abfd, (asection *) plt, gotoffs_raw,
 				     pltoffs + plt_entry_got_offset,
 				     sizeof (gotoffs_raw)))

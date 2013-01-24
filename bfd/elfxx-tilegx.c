@@ -2977,7 +2977,7 @@ static const bfd_byte insn_mask_X1[] = {
 /* Mask to extract the bits corresponding to an instruction in a
    specific pipe of a bundle, minus the destination operand and the
    first source operand.  */
-static const bfd_byte insn_mask_X0_no_dest_no_srca[] = { 
+static const bfd_byte insn_mask_X0_no_dest_no_srca[] = {
   0x00, 0xf0, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00
 };
 
@@ -3479,7 +3479,7 @@ tilegx_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 		  local_got_offsets[r_symndx] |= 1;
 		}
 	    }
-	  relocation = htab->elf.sgot->output_offset + off - got_base;
+	  relocation = off - got_base;
 	  break;
 
         case R_TILEGX_JUMPOFF_X1_PLT:
@@ -3926,7 +3926,7 @@ tilegx_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 	  if (off >= (bfd_vma) -2)
 	    abort ();
 
-	  relocation = htab->elf.sgot->output_offset + off - got_base;
+	  relocation = off - got_base;
 	  unresolved_reloc = FALSE;
 	  howto = tilegx_elf_howto_table + r_type;
 	  break;
@@ -4185,7 +4185,7 @@ tilegx_elf_finish_dynamic_symbol (bfd *output_bfd,
     }
 
   /* Mark some specially defined symbols as absolute. */
-  if (strcmp (h->root.root.string, "_DYNAMIC") == 0
+  if (h == htab->elf.hdynamic
       || (h == htab->elf.hgot || h == htab->elf.hplt))
     sym->st_shndx = SHN_ABS;
 

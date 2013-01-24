@@ -15,6 +15,24 @@
 
 @SET_MAKE@
 
+#
+#   Copyright 2012 Free Software Foundation
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
+
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -406,6 +424,7 @@ TARGET_CPU_CFILES = \
 	config/tc-m68k.c \
 	config/tc-mcore.c \
 	config/tc-mep.c \
+	config/tc-metag.c \
 	config/tc-microblaze.c \
 	config/tc-mips.c \
 	config/tc-mmix.c \
@@ -476,6 +495,7 @@ TARGET_CPU_HFILES = \
 	config/tc-m68k.h \
 	config/tc-mcore.h \
 	config/tc-mep.h \
+	config/tc-metag.h \
 	config/tc-microblaze.h \
 	config/tc-mips.h \
 	config/tc-mmix.h \
@@ -826,6 +846,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-m68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-mcore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-mep.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-metag.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-microblaze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-mips.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc-mmix.Po@am__quote@
@@ -1320,6 +1341,20 @@ tc-mep.obj: config/tc-mep.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-mep.c' object='tc-mep.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-mep.obj `if test -f 'config/tc-mep.c'; then $(CYGPATH_W) 'config/tc-mep.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-mep.c'; fi`
+
+tc-metag.o: config/tc-metag.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-metag.o -MD -MP -MF $(DEPDIR)/tc-metag.Tpo -c -o tc-metag.o `test -f 'config/tc-metag.c' || echo '$(srcdir)/'`config/tc-metag.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-metag.Tpo $(DEPDIR)/tc-metag.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-metag.c' object='tc-metag.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-metag.o `test -f 'config/tc-metag.c' || echo '$(srcdir)/'`config/tc-metag.c
+
+tc-metag.obj: config/tc-metag.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-metag.obj -MD -MP -MF $(DEPDIR)/tc-metag.Tpo -c -o tc-metag.obj `if test -f 'config/tc-metag.c'; then $(CYGPATH_W) 'config/tc-metag.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-metag.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/tc-metag.Tpo $(DEPDIR)/tc-metag.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='config/tc-metag.c' object='tc-metag.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tc-metag.obj `if test -f 'config/tc-metag.c'; then $(CYGPATH_W) 'config/tc-metag.c'; else $(CYGPATH_W) '$(srcdir)/config/tc-metag.c'; fi`
 
 tc-microblaze.o: config/tc-microblaze.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tc-microblaze.o -MD -MP -MF $(DEPDIR)/tc-microblaze.Tpo -c -o tc-microblaze.o `test -f 'config/tc-microblaze.c' || echo '$(srcdir)/'`config/tc-microblaze.c
@@ -2582,7 +2617,7 @@ install-exec-tooldir: install-exec-bindir $(noinst_PROGRAMS)
 
 .PHONY: bootstrap bootstrap2 bootstrap3 stage1 stage2 stage3 comparison
 
-bootstrap: as-new
+bootstrap: as-new$(EXEEXT)
 	$(MAKE) stage1
 	rm -f stage && ln -s stage1 stage
 	$(MAKE) CC="$(CC)" CFLAGS="-O -Bstage/ $(CFLAGS)" libdir=$(libdir) ALLOCA= $(noinst_PROGRAMS)

@@ -58,6 +58,7 @@ responsibility among the other maintainers.
 
   ALPHA            Richard Henderson <rth@redhat.com>
   AARCH64	   Richard Earnshaw <rearnsha@arm.com>
+  AARCH64	   Marcus Shawcroft <marcus.shawcroft@arm.com>
   ARM		   Nick Clifton <nickc@redhat.com>
   ARM		   Richard Earnshaw <rearnsha@arm.com>
   ARM		   Paul Brook <paul@codesourcery.com>
@@ -92,7 +93,7 @@ responsibility among the other maintainers.
   ix86 INTEL MODE  Jan Beulich <jbeulich@novell.com>
   LM32             Jon Beniston <jon@beniston.com>
   M32R             Doug Evans <dje@sebabeach.org>
-  M68HC11 M68HC12  Stephane Carrez <stcarrez@nerim.fr>
+  M68HC11 M68HC12  Stephane Carrez <Stephane.Carrez@gmail.com>
   M68HC11 M68HC12  Sean Keys <skeys@ipdatasys.com>
   M88k		   Mark Kettenis <kettenis@gnu.org>
   MACH-O           Tristan Gingold <gingold@adacore.com>
@@ -270,3 +271,9 @@ Having selected the branch name, create the branch as follows:
 
 Please do not commit any patches to a branch you did not create
 without the explicit permission of the person who created the branch.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

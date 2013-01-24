@@ -1,6 +1,6 @@
 /* BFD back-end data structures for ELF files.
    Copyright 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
-   2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+   2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
    Free Software Foundation, Inc.
    Written by Cygnus Support.
 
@@ -191,8 +191,8 @@ struct elf_link_hash_entry
      FIXME: There is no real need for this field if def_dynamic is never
      cleared and all places that test def_dynamic also test def_regular.  */
   unsigned int dynamic_def : 1;
-  /* Symbol is weak in all shared objects.  */
-  unsigned int dynamic_weak : 1;
+  /* Symbol has a non-weak reference from a shared object.  */
+  unsigned int ref_dynamic_nonweak : 1;
   /* Symbol is referenced with a relocation where C/C++ pointer equality
      matters.  */
   unsigned int pointer_equality_needed : 1;
@@ -418,6 +418,7 @@ enum elf_target_id
   M32R_ELF_DATA,
   M68HC11_ELF_DATA,
   M68K_ELF_DATA,
+  METAG_ELF_DATA,
   MICROBLAZE_ELF_DATA,
   MIPS_ELF_DATA,
   MN10300_ELF_DATA,
@@ -498,6 +499,9 @@ struct elf_link_hash_table
 
   /* The _PROCEDURE_LINKAGE_TABLE_ symbol.  */
   struct elf_link_hash_entry *hplt;
+
+  /* The _DYNAMIC symbol.  */
+  struct elf_link_hash_entry *hdynamic;
 
   /* A pointer to information used to merge SEC_MERGE sections.  */
   void *merge_info;
@@ -1283,6 +1287,9 @@ struct elf_backend_data
   /* This is non-zero if static TLS segments require a special alignment.  */
   unsigned static_tls_alignment;
 
+  /* Alignment for the PT_GNU_STACK segment. */
+  unsigned stack_align;
+
   /* This is TRUE if the linker should act like collect and gather
      global constructors and destructors by name.  This is TRUE for
      MIPS ELF because the Irix 5 tools can not handle the .init
@@ -1932,8 +1939,12 @@ extern void _bfd_elf_strtab_addref
   (struct elf_strtab_hash *, bfd_size_type);
 extern void _bfd_elf_strtab_delref
   (struct elf_strtab_hash *, bfd_size_type);
-extern void _bfd_elf_strtab_clear_all_refs
-  (struct elf_strtab_hash *);
+extern unsigned int _bfd_elf_strtab_refcount
+  (struct elf_strtab_hash *, bfd_size_type);
+extern void _bfd_elf_strtab_clear_refs
+  (struct elf_strtab_hash *, bfd_size_type);
+#define _bfd_elf_strtab_clear_all_refs(tab) \
+  do { _bfd_elf_strtab_clear_refs (tab, 1); } while (0)
 extern bfd_size_type _bfd_elf_strtab_size
   (struct elf_strtab_hash *);
 extern bfd_size_type _bfd_elf_strtab_offset
@@ -1968,7 +1979,7 @@ extern bfd_boolean _bfd_elf_maybe_strip_eh_frame_hdr
 
 extern bfd_boolean _bfd_elf_merge_symbol
   (bfd *, struct bfd_link_info *, const char *, Elf_Internal_Sym *,
-   asection **, bfd_vma *, unsigned int *,
+   asection **, bfd_vma *, bfd_boolean *, unsigned int *,
    struct elf_link_hash_entry **, bfd_boolean *,
    bfd_boolean *, bfd_boolean *, bfd_boolean *);
 
@@ -2263,6 +2274,12 @@ extern char *elfcore_write_s390_last_break
 extern char *elfcore_write_s390_system_call
   (bfd *, char *, int *, const void *, int);
 extern char *elfcore_write_arm_vfp
+  (bfd *, char *, int *, const void *, int);
+extern char *elfcore_write_aarch_tls
+  (bfd *, char *, int *, const void *, int);
+extern char *elfcore_write_aarch_hw_break
+  (bfd *, char *, int *, const void *, int);
+extern char *elfcore_write_aarch_hw_watch
   (bfd *, char *, int *, const void *, int);
 extern char *elfcore_write_lwpstatus
   (bfd *, char *, int *, long, int, const void *);

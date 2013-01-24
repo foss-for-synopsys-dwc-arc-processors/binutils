@@ -188,6 +188,14 @@ extern const int vle_num_opcodes;
 /* Opcode which is supported by the VLE extension.  */
 #define PPC_OPCODE_VLE	      0x1000000000ull
 
+/* Opcode is only supported by Power8 architecture.  */
+#define PPC_OPCODE_POWER8     0x2000000000ull
+
+/* Opcode which is supported by the Hardware Transactional Memory extension.  */
+/* Currently, this is the same as the POWER8 mask.  If another cpu comes out
+   that isn't a superset of POWER8, we can define this to its own mask.  */
+#define PPC_OPCODE_HTM        PPC_OPCODE_POWER8
+
 /* A macro to extract the major opcode from an instruction.  */
 #define PPC_OP(i) (((i) >> 26) & 0x3f)
 
@@ -400,6 +408,6 @@ struct powerpc_macro
 extern const struct powerpc_macro powerpc_macros[];
 extern const int powerpc_num_macros;
 
-extern ppc_cpu_t ppc_parse_cpu (ppc_cpu_t, const char *);
+extern ppc_cpu_t ppc_parse_cpu (ppc_cpu_t, ppc_cpu_t *, const char *);
 
 #endif /* PPC_H */

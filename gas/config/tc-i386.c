@@ -664,6 +664,8 @@ static const arch_entry cpu_arch[] =
     CPU_BDVER1_FLAGS, 0, 0 },
   { STRING_COMMA_LEN ("bdver2"), PROCESSOR_BD,
     CPU_BDVER2_FLAGS, 0, 0 },
+  { STRING_COMMA_LEN ("bdver3"), PROCESSOR_BD,
+    CPU_BDVER3_FLAGS, 0, 0 },
   { STRING_COMMA_LEN ("btver1"), PROCESSOR_BT,
     CPU_BTVER1_FLAGS, 0, 0 },
   { STRING_COMMA_LEN ("btver2"), PROCESSOR_BT,
@@ -736,6 +738,8 @@ static const arch_entry cpu_arch[] =
     CPU_LWP_FLAGS, 0, 0 },
   { STRING_COMMA_LEN (".movbe"), PROCESSOR_UNKNOWN,
     CPU_MOVBE_FLAGS, 0, 0 },
+  { STRING_COMMA_LEN (".cx16"), PROCESSOR_UNKNOWN,
+    CPU_CX16_FLAGS, 0, 0 },
   { STRING_COMMA_LEN (".ept"), PROCESSOR_UNKNOWN,
     CPU_EPT_FLAGS, 0, 0 },
   { STRING_COMMA_LEN (".lzcnt"), PROCESSOR_UNKNOWN,
@@ -2371,7 +2375,7 @@ md_begin (void)
 				    (void *) core_optab);
 	    if (hash_err)
 	      {
-		as_fatal (_("internal Error:  Can't hash %s: %s"),
+		as_fatal (_("can't hash %s: %s"),
 			  (optab - 1)->name,
 			  hash_err);
 	      }
@@ -2393,7 +2397,7 @@ md_begin (void)
       {
 	hash_err = hash_insert (reg_hash, regtab->reg_name, (void *) regtab);
 	if (hash_err)
-	  as_fatal (_("internal Error:  Can't hash %s: %s"),
+	  as_fatal (_("can't hash %s: %s"),
 		    regtab->reg_name,
 		    hash_err);
       }
@@ -2682,6 +2686,16 @@ reloc (unsigned int size,
 	    break;
 	  }
 
+#if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
+      if (other == BFD_RELOC_SIZE32)
+	{
+	  if (size == 8)
+	    return BFD_RELOC_SIZE64;
+	  if (pcrel)
+	    as_bad (_("there are no pc-relative size relocations"));
+	}
+#endif
+
       /* Sign-checking 4-byte relocations in 16-/32-bit code is pointless.  */
       if (size == 4 && (flag_code != CODE_64BIT || disallow_64bit_reloc))
 	sign = -1;
@@ -2765,8 +2779,11 @@ tc_i386_fix_adjustable (fixS *fixP ATTRIBUTE_UNUSED)
       && fixP->fx_r_type == BFD_RELOC_32_PCREL)
     return 0;
 
-  /* adjust_reloc_syms doesn't know about the GOT.  */
-  if (fixP->fx_r_type == BFD_RELOC_386_GOTOFF
+  /* Adjust_reloc_syms doesn't know about the GOT.  Need to keep symbol
+     for size relocations.  */
+  if (fixP->fx_r_type == BFD_RELOC_SIZE32
+      || fixP->fx_r_type == BFD_RELOC_SIZE64
+      || fixP->fx_r_type == BFD_RELOC_386_GOTOFF
       || fixP->fx_r_type == BFD_RELOC_386_PLT32
       || fixP->fx_r_type == BFD_RELOC_386_GOT32
       || fixP->fx_r_type == BFD_RELOC_386_TLS_GD
@@ -6704,6 +6721,11 @@ lex_got (enum bfd_reloc_code_real *rel,
     const enum bfd_reloc_code_real rel[2];
     const i386_operand_type types64;
   } gotrel[] = {
+#if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
+    { STRING_COMMA_LEN ("SIZE"),      { BFD_RELOC_SIZE32,
+					BFD_RELOC_SIZE32 },
+      OPERAND_TYPE_IMM32_64 },
+#endif
     { STRING_COMMA_LEN ("PLTOFF"),   { _dummy_first_bfd_reloc_code_real,
 				       BFD_RELOC_X86_64_PLTOFF64 },
       OPERAND_TYPE_IMM64 },
@@ -6779,8 +6801,6 @@ lex_got (enum bfd_reloc_code_real *rel,
 	      char *tmpbuf, *past_reloc;
 
 	      *rel = gotrel[j].rel[object_64bit];
-	      if (adjust)
-		*adjust = len;
 
 	      if (types)
 		{
@@ -6793,7 +6813,7 @@ lex_got (enum bfd_reloc_code_real *rel,
 		    *types = gotrel[j].types64;
 		}
 
-	      if (GOT_symbol == NULL)
+	      if (j != 0 && GOT_symbol == NULL)
 		GOT_symbol = symbol_find_or_make (GLOBAL_OFFSET_TABLE_NAME);
 
 	      /* The length of the first part of our input line.  */
@@ -6815,6 +6835,12 @@ lex_got (enum bfd_reloc_code_real *rel,
 		/* Replace the relocation token with ' ', so that
 		   errors like foo@GOTOFF1 will be detected.  */
 		tmpbuf[first++] = ' ';
+	      else
+		/* Increment length by 1 if the relocation token is
+		   removed.  */
+		len++;
+	      if (adjust)
+		*adjust = len;
 	      memcpy (tmpbuf + first, past_reloc, second);
 	      tmpbuf[first + second] = '\0';
 	      return tmpbuf;
@@ -6842,8 +6868,8 @@ lex_got (enum bfd_reloc_code_real *rel,
    input string, minus the `@SECREL32' into a malloc'd buffer for
    parsing by the calling routine.  Return this buffer, and if ADJUST
    is non-null set it to the length of the string we removed from the
-   input line.  Otherwise return NULL.  
-   
+   input line.  Otherwise return NULL.
+
    This function is copied from the ELF version above adjusted for PE targets.  */
 
 static char *
@@ -9223,6 +9249,26 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 
   switch (fixp->fx_r_type)
     {
+#if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
+    case BFD_RELOC_SIZE32:
+    case BFD_RELOC_SIZE64:
+      if (S_IS_DEFINED (fixp->fx_addsy)
+	  && !S_IS_EXTERNAL (fixp->fx_addsy))
+	{
+	  /* Resolve size relocation against local symbol to size of
+	     the symbol plus addend.  */
+	  valueT value = S_GET_SIZE (fixp->fx_addsy) + fixp->fx_offset;
+	  if (fixp->fx_r_type == BFD_RELOC_SIZE32
+	      && !fits_in_unsigned_long (value))
+	    as_bad_where (fixp->fx_file, fixp->fx_line,
+			  _("symbol size computation overflow"));
+	  fixp->fx_addsy = NULL;
+	  fixp->fx_subsy = NULL;
+	  md_apply_fix (fixp, (valueT *) &value, NULL);
+	  return NULL;
+	}
+#endif
+
     case BFD_RELOC_X86_64_PLT32:
     case BFD_RELOC_X86_64_GOT32:
     case BFD_RELOC_X86_64_GOTPCREL:

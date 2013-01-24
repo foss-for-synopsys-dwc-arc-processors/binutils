@@ -552,7 +552,15 @@ class Layout
   // Maps section SECN to SEGMENT s.
   void
   insert_section_segment_map(Const_section_id secn, Unique_segment_info *s);
-  
+
+  // Some input sections require special ordering, for compatibility
+  // with GNU ld.  Given the name of an input section, return -1 if it
+  // does not require special ordering.  Otherwise, return the index
+  // by which it should be ordered compared to other input sections
+  // that require special ordering.
+  static int
+  special_ordering_of_input_section(const char* name);
+
   bool
   is_section_ordering_specified()
   { return this->section_ordering_specified_; }
@@ -916,6 +924,10 @@ class Layout
   // by the linker script code.
   void
   get_allocated_sections(Section_list*) const;
+
+  // Store the executable sections into the section list.
+  void
+  get_executable_sections(Section_list*) const;
 
   // Make a section for a linker script to hold data.
   Output_section*

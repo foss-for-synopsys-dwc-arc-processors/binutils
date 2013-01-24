@@ -63,6 +63,9 @@
 #define ARM_ELF_ABI_VERSION		0
 #define ARM_ELF_OS_ABI_VERSION		ELFOSABI_ARM
 
+/* The Adjusted Place, as defined by AAELF.  */
+#define Pa(X) ((X) & 0xfffffffc)
+
 static bfd_boolean elf32_arm_write_section (bfd *output_bfd,
 					    struct bfd_link_info *link_info,
 					    asection *sec,
@@ -2209,21 +2212,21 @@ static const bfd_vma elf32_arm_nacl_plt0_entry [] =
   0xe08cc00f,		/* add	ip, ip, pc			*/
   0xe52dc008,		/* str	ip, [sp, #-8]!			*/
   /* Second bundle: */
-  0xe7dfcf1f, 	/* bfc	ip, #30, #2			*/
-  0xe59cc000, 	/* ldr	ip, [ip]			*/
+  0xe3ccc103,		/* bic	ip, ip, #0xc0000000		*/
+  0xe59cc000,		/* ldr	ip, [ip]			*/
   0xe3ccc13f,		/* bic	ip, ip, #0xc000000f		*/
-  0xe12fff1c, 	/* bx	ip				*/
+  0xe12fff1c,		/* bx	ip				*/
   /* Third bundle: */
-  0xe320f000, 	/* nop					*/
-  0xe320f000, 	/* nop					*/
-  0xe320f000, 	/* nop					*/
+  0xe320f000,		/* nop					*/
+  0xe320f000,		/* nop					*/
+  0xe320f000,		/* nop					*/
   /* .Lplt_tail: */
   0xe50dc004,		/* str	ip, [sp, #-4]			*/
   /* Fourth bundle: */
-  0xe7dfcf1f,		/* bfc	ip, #30, #2			*/
-  0xe59cc000, 	/* ldr	ip, [ip]			*/
+  0xe3ccc103,		/* bic	ip, ip, #0xc0000000		*/
+  0xe59cc000,		/* ldr	ip, [ip]			*/
   0xe3ccc13f,		/* bic	ip, ip, #0xc000000f		*/
-  0xe12fff1c, 	/* bx	ip				*/
+  0xe12fff1c,		/* bx	ip				*/
 };
 #define ARM_NACL_PLT_TAIL_OFFSET	(11 * 4)
 
@@ -4983,6 +4986,9 @@ elf32_arm_size_stubs (bfd *output_bfd,
 	  Elf_Internal_Shdr *symtab_hdr;
 	  asection *section;
 	  Elf_Internal_Sym *local_syms = NULL;
+
+          if (!is_arm_elf (input_bfd))
+            continue;
 
 	  num_a8_relocs = 0;
 
@@ -8619,9 +8625,9 @@ elf32_arm_final_link_relocate (reloc_howto_type *           howto,
           }
 
 	relocation = value + signed_addend;
-	relocation -= (input_section->output_section->vma
-		       + input_section->output_offset
-		       + rel->r_offset);
+	relocation -= Pa (input_section->output_section->vma
+		          + input_section->output_offset
+		          + rel->r_offset);
 
         value = abs (relocation);
 
@@ -8651,12 +8657,12 @@ elf32_arm_final_link_relocate (reloc_howto_type *           howto,
 	insn = bfd_get_16 (input_bfd, hit_data);
 
         if (globals->use_rel)
-	  addend = (insn & 0x00ff) << 2;
+	  addend = ((((insn & 0x00ff) << 2) + 4) & 0x3ff) -4;
 
 	relocation = value + addend;
-	relocation -= (input_section->output_section->vma
-		       + input_section->output_offset
-		       + rel->r_offset);
+	relocation -= Pa (input_section->output_section->vma
+		          + input_section->output_offset
+		          + rel->r_offset);
 
         value = abs (relocation);
 
@@ -8691,9 +8697,9 @@ elf32_arm_final_link_relocate (reloc_howto_type *           howto,
           }
 
 	relocation = value + signed_addend;
-	relocation -= (input_section->output_section->vma
-		       + input_section->output_offset
-		       + rel->r_offset);
+	relocation -= Pa (input_section->output_section->vma
+		          + input_section->output_offset
+		          + rel->r_offset);
 
         value = abs (relocation);
 
@@ -12110,6 +12116,15 @@ elf32_arm_print_private_bfd_data (bfd *abfd, void * ptr)
 
     case EF_ARM_EABI_VER5:
       fprintf (file, _(" [Version5 EABI]"));
+
+      if (flags & EF_ARM_ABI_FLOAT_SOFT)
+	fprintf (file, _(" [soft-float ABI]"));
+
+      if (flags & EF_ARM_ABI_FLOAT_HARD)
+	fprintf (file, _(" [hard-float ABI]"));
+
+      flags &= ~(EF_ARM_ABI_FLOAT_SOFT | EF_ARM_ABI_FLOAT_HARD);
+
     eabi:
       if (flags & EF_ARM_BE8)
 	fprintf (file, _(" [BE8]"));
@@ -14003,7 +14018,7 @@ elf32_arm_finish_dynamic_symbol (bfd * output_bfd,
   /* Mark _DYNAMIC and _GLOBAL_OFFSET_TABLE_ as absolute.  On VxWorks,
      the _GLOBAL_OFFSET_TABLE_ symbol is not absolute: it is relative
      to the ".got" section.  */
-  if (strcmp (h->root.root.string, "_DYNAMIC") == 0
+  if (h == htab->root.hdynamic
       || (!htab->vxworks_p && h == htab->root.hgot))
     sym->st_shndx = SHN_ABS;
 
@@ -14416,6 +14431,16 @@ elf32_arm_post_process_headers (bfd * abfd, struct bfd_link_info * link_info ATT
       globals = elf32_arm_hash_table (link_info);
       if (globals != NULL && globals->byteswap_code)
 	i_ehdrp->e_flags |= EF_ARM_BE8;
+    }
+
+  if (EF_ARM_EABI_VERSION (i_ehdrp->e_flags) == EF_ARM_EABI_VER5
+      && ((i_ehdrp->e_type == ET_DYN) || (i_ehdrp->e_type == ET_EXEC)))
+    {
+      int abi = bfd_elf_get_obj_attr_int (abfd, OBJ_ATTR_PROC, Tag_ABI_VFP_args);
+      if (abi)
+	i_ehdrp->e_flags |= EF_ARM_ABI_FLOAT_HARD;
+      else
+	i_ehdrp->e_flags |= EF_ARM_ABI_FLOAT_SOFT;
     }
 }
 

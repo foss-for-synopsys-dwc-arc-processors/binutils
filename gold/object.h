@@ -1079,6 +1079,11 @@ class Relobj : public Object
 		       unsigned int got_offset)
   { this->do_set_local_got_offset(symndx, got_type, got_offset); }
 
+  // Return whether the local symbol SYMNDX is a TLS symbol.
+  bool
+  local_is_tls(unsigned int symndx) const
+  { return this->do_local_is_tls(symndx); }
+
   // The number of local symbols in the input symbol table.
   virtual unsigned int
   local_symbol_count() const
@@ -1219,6 +1224,16 @@ class Relobj : public Object
   do_get_incremental_reloc_count(unsigned int symndx) const
   { return this->reloc_counts_[symndx]; }
 
+  // Return the word size of the object file.
+  int
+  elfsize() const
+  { return this->do_elfsize(); }
+
+  // Return TRUE if this is a big-endian object file.
+  bool
+  is_big_endian() const
+  { return this->do_is_big_endian(); }
+
  protected:
   // The output section to be used for each input section, indexed by
   // the input section number.  The output section is NULL if the
@@ -1258,6 +1273,10 @@ class Relobj : public Object
   virtual void
   do_set_local_got_offset(unsigned int symndx, unsigned int got_type,
 			  unsigned int got_offset) = 0;
+
+  // Return whether local symbol SYMNDX is a TLS symbol.
+  virtual bool
+  do_local_is_tls(unsigned int symndx) const = 0;
 
   // Return the number of local symbols--implemented by child class.
   virtual unsigned int
@@ -1376,6 +1395,16 @@ class Relobj : public Object
     unsigned int counter = this->reloc_counts_[symndx]++;
     return this->reloc_bases_[symndx] + counter;
   }
+
+  // Return the word size of the object file--
+  // implemented by child class.
+  virtual int
+  do_elfsize() const = 0;
+
+  // Return TRUE if this is a big-endian object file--
+  // implemented by child class.
+  virtual bool
+  do_is_big_endian() const = 0;
 
  private:
   // Mapping from input sections to output section.
@@ -1954,6 +1983,16 @@ class Sized_relobj : public Relobj
       }
   }
 
+  // Return the word size of the object file.
+  virtual int
+  do_elfsize() const
+  { return size; }
+
+  // Return TRUE if this is a big-endian object file.
+  virtual bool
+  do_is_big_endian() const
+  { return big_endian; }
+
  private:
   // The GOT offsets of local symbols. This map also stores GOT offsets
   // for tp-relative offsets for TLS symbols.
@@ -2103,6 +2142,12 @@ class Sized_relobj_file : public Sized_relobj<size, big_endian>
   void
   set_local_plt_offset(unsigned int symndx, unsigned int plt_offset);
 
+  // Adjust this local symbol value.  Return false if the symbol
+  // should be discarded from the output file.
+  bool
+  adjust_local_symbol(Symbol_value<size>* lv) const
+  { return this->do_adjust_local_symbol(lv); }
+
   // Return the name of the symbol that spans the given offset in the
   // specified section in this object.  This is used only for error
   // messages and is not particularly efficient.
@@ -2165,6 +2210,11 @@ class Sized_relobj_file : public Sized_relobj<size, big_endian>
   // this if it doesn't have one.
   unsigned int
   do_local_plt_offset(unsigned int symndx) const;
+
+  // Return whether local symbol SYMNDX is a TLS symbol.
+  bool
+  do_local_is_tls(unsigned int symndx) const
+  { return this->local_symbol(symndx)->is_tls_symbol(); }
 
   // Return the number of local symbols.
   unsigned int
@@ -2367,6 +2417,12 @@ class Sized_relobj_file : public Sized_relobj<size, big_endian>
 		       const unsigned char* pshdrs, Output_file* of,
 		       Views* pviews);
 
+  // Adjust this local symbol value.  Return false if the symbol
+  // should be discarded from the output file.
+  virtual bool
+  do_adjust_local_symbol(Symbol_value<size>*) const
+  { return true; }
+
   // Allow a child to set output local symbol count.
   void
   set_output_local_symbol_count(unsigned int value)
@@ -2498,27 +2554,6 @@ class Sized_relobj_file : public Sized_relobj<size, big_endian>
 			   const unsigned char* plocal_syms,
 			   const Read_relocs_data::Relocs_list::iterator&,
 			   Relocatable_relocs*);
-
-  // Emit the relocs for --emit-relocs.
-  void
-  emit_relocs(const Relocate_info<size, big_endian>*, unsigned int,
-	      unsigned int sh_type, const unsigned char* prelocs,
-	      size_t reloc_count, Output_section*, Address output_offset,
-	      unsigned char* view, Address address,
-	      section_size_type view_size,
-	      unsigned char* reloc_view, section_size_type reloc_view_size);
-
-  // Emit the relocs for --emit-relocs, templatized on the type of the
-  // relocation section.
-  template<int sh_type>
-  void
-  emit_relocs_reltype(const Relocate_info<size, big_endian>*, unsigned int,
-		      const unsigned char* prelocs, size_t reloc_count,
-		      Output_section*, Address output_offset,
-		      unsigned char* view, Address address,
-		      section_size_type view_size,
-		      unsigned char* reloc_view,
-		      section_size_type reloc_view_size);
 
   // Scan the input relocations for --incremental.
   void

@@ -1,6 +1,6 @@
 /* tc-arm.c -- Assemble for the ARM
    Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+   2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
    Free Software Foundation, Inc.
    Contributed by Richard Earnshaw (rwe@pegasus.esprit.ec.org)
 	Modified by David Taylor (dtaylor@armltd.co.uk)
@@ -320,6 +320,11 @@ static int implicit_it_mode = IMPLICIT_IT_MODE_ARM;
        conditional affix except in the scope of an IT instruction.  */
 
 static bfd_boolean unified_syntax = FALSE;
+
+/* An immediate operand can start with #, and ld*, st*, pld operands
+   can contain [ and ].  We need to tell APP not to elide whitespace
+   before a [, which can appear as the first operand for pld.  */
+const char arm_symbol_chars[] = "#[]";
 
 enum neon_el_type
 {
@@ -880,6 +885,9 @@ const char FLT_CHARS[] = "rRsSfFdDxXeEpP";
 static inline int
 skip_past_char (char ** str, char c)
 {
+  /* PR gas/14987: Allow for whitespace before the expected character.  */
+  skip_whitespace (*str);
+  
   if (**str == c)
     {
       (*str)++;
@@ -4336,7 +4344,7 @@ s_arm_unwind_raw (int ignored ATTRIBUTE_UNUSED)
 static void
 s_arm_eabi_attribute (int ignored ATTRIBUTE_UNUSED)
 {
-  int tag = s_vendor_attribute (OBJ_ATTR_PROC);
+  int tag = obj_elf_vendor_attribute (OBJ_ATTR_PROC);
 
   if (tag < NUM_KNOWN_OBJ_ATTRIBUTES)
     attributes_set_explicitly[tag] = 1;
@@ -5162,6 +5170,9 @@ parse_address_main (char **str, int i, int group_relocations,
       *str = p;
       return PARSE_OPERAND_SUCCESS;
     }
+
+  /* PR gas/14887: Allow for whitespace after the opening bracket.  */
+  skip_whitespace (p);
 
   if ((reg = arm_reg_parse (&p, REG_TYPE_RN)) == FAIL)
     {
@@ -8738,7 +8749,7 @@ do_strexd (void)
 
 /* ARM V8 STRL.  */
 static void
-do_strlex (void)
+do_stlex (void)
 {
   constraint (inst.operands[0].reg == inst.operands[1].reg
 	      || inst.operands[0].reg == inst.operands[2].reg, BAD_OVERLAP);
@@ -8747,7 +8758,7 @@ do_strlex (void)
 }
 
 static void
-do_t_strlex (void)
+do_t_stlex (void)
 {
   constraint (inst.operands[0].reg == inst.operands[1].reg
 	      || inst.operands[0].reg == inst.operands[2].reg, BAD_OVERLAP);
@@ -10225,7 +10236,7 @@ do_t_branch (void)
 }
 
 /* Actually do the work for Thumb state bkpt and hlt.  The only difference
-   between the two is the maximum immediate allowed - which is passed in 
+   between the two is the maximum immediate allowed - which is passed in
    RANGE.  */
 static void
 do_t_bkpt_hlt1 (int range)
@@ -14660,7 +14671,7 @@ do_vfp_nsyn_cvtz (void)
 }
 
 static void
-do_vfp_nsyn_cvt_fpv8 (enum neon_cvt_flavour flavour, 
+do_vfp_nsyn_cvt_fpv8 (enum neon_cvt_flavour flavour,
 		      enum neon_cvt_mode mode)
 {
   int sz, op;
@@ -14720,9 +14731,9 @@ do_neon_cvt_1 (enum neon_cvt_mode mode)
   /* PR11109: Handle round-to-zero for VCVT conversions.  */
   if (mode == neon_cvt_mode_z
       && ARM_CPU_HAS_FEATURE (cpu_variant, fpu_arch_vfp_v2)
-      && (flavour == neon_cvt_flavour_s32_f32 
-	  || flavour == neon_cvt_flavour_u32_f32 
-	  || flavour == neon_cvt_flavour_s32_f64 
+      && (flavour == neon_cvt_flavour_s32_f32
+	  || flavour == neon_cvt_flavour_u32_f32
+	  || flavour == neon_cvt_flavour_s32_f64
 	  || flavour == neon_cvt_flavour_u32_f64)
       && (rs == NS_FD || rs == NS_FF))
     {
@@ -17778,38 +17789,6 @@ static struct asm_barrier_opt barrier_opt_names[] =
 #define tC3w(mnem, aop, top, nops, ops, ae, te) \
       TxC3w (mnem, aop, T_MNEM##top, nops, ops, ae, te)
 
-/* Mnemonic with a conditional infix in an unusual place.  Each and every variant has to
-   appear in the condition table.  */
-#define TxCM_(m1, m2, m3, op, top, nops, ops, ae, te)	\
-  { m1 #m2 m3, OPS##nops ops, sizeof (#m2) == 1 ? OT_odd_infix_unc : OT_odd_infix_0 + sizeof (m1) - 1, \
-    0x##op, top, ARM_VARIANT, THUMB_VARIANT, do_##ae, do_##te }
-
-#define TxCM(m1, m2, op, top, nops, ops, ae, te)	\
-  TxCM_ (m1,   , m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, eq, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, ne, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, cs, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, hs, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, cc, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, ul, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, lo, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, mi, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, pl, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, vs, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, vc, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, hi, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, ls, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, ge, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, lt, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, gt, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, le, m2, op, top, nops, ops, ae, te),	\
-  TxCM_ (m1, al, m2, op, top, nops, ops, ae, te)
-
-#define TCM(m1,m2, aop, top, nops, ops, ae, te)		\
-      TxCM (m1,m2, aop, 0x##top, nops, ops, ae, te)
-#define tCM(m1,m2, aop, top, nops, ops, ae, te)		\
-      TxCM (m1,m2, aop, T_MNEM##top, nops, ops, ae, te)
-
 /* Mnemonic that cannot be conditionalized.  The ARM condition-code
    field is still 0xE.  Many of the Thumb variants can be executed
    conditionally, so this is checked separately.  */
@@ -18101,8 +18080,8 @@ static const struct asm_opcode insns[] =
  tC3("strh",	00000b0, _strh,     2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
  tC3("ldrsh",	01000f0, _ldrsh,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
  tC3("ldrsb",	01000d0, _ldrsb,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
- tCM("ld","sh",	01000f0, _ldrsh,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
- tCM("ld","sb",	01000d0, _ldrsb,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
+ tC3("ldsh",	01000f0, _ldrsh,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
+ tC3("ldsb",	01000d0, _ldrsb,    2, (RRnpc_npcsp, ADDRGLDRS), ldstv4, t_ldst),
 
 #undef  ARM_VARIANT
 #define ARM_VARIANT  & arm_ext_v4t_5
@@ -18216,17 +18195,23 @@ static const struct asm_opcode insns[] =
 #undef  THUMB_VARIANT
 #define THUMB_VARIANT  & arm_ext_v6_notm
  TUF("rfeia",	8900a00, e990c000, 1, (RRw),			   rfe, rfe),
+ TUF("rfe",	8900a00, e990c000, 1, (RRw),			   rfe, rfe),
   UF(rfeib,	9900a00,           1, (RRw),			   rfe),
   UF(rfeda,	8100a00,           1, (RRw),			   rfe),
  TUF("rfedb",	9100a00, e810c000, 1, (RRw),			   rfe, rfe),
  TUF("rfefd",	8900a00, e990c000, 1, (RRw),			   rfe, rfe),
-  UF(rfefa,	9900a00,           1, (RRw),			   rfe),
-  UF(rfeea,	8100a00,           1, (RRw),			   rfe),
- TUF("rfeed",	9100a00, e810c000, 1, (RRw),			   rfe, rfe),
+  UF(rfefa,	8100a00,           1, (RRw),			   rfe),
+ TUF("rfeea",	9100a00, e810c000, 1, (RRw),			   rfe, rfe),
+  UF(rfeed,	9900a00,           1, (RRw),			   rfe),
  TUF("srsia",	8c00500, e980c000, 2, (oRRw, I31w),		   srs,  srs),
+ TUF("srs",	8c00500, e980c000, 2, (oRRw, I31w),		   srs,  srs),
+ TUF("srsea",	8c00500, e980c000, 2, (oRRw, I31w),		   srs,  srs),
   UF(srsib,	9c00500,           2, (oRRw, I31w),		   srs),
+  UF(srsfa,	9c00500,           2, (oRRw, I31w),		   srs),
   UF(srsda,	8400500,	   2, (oRRw, I31w),		   srs),
+  UF(srsed,	8400500,	   2, (oRRw, I31w),		   srs),
  TUF("srsdb",	9400500, e800c000, 2, (oRRw, I31w),		   srs,  srs),
+ TUF("srsfd",	9400500, e800c000, 2, (oRRw, I31w),		   srs,  srs),
 
 /*  ARM V6 not included in V7M (eg. integer SIMD).  */
 #undef  THUMB_VARIANT
@@ -18476,25 +18461,25 @@ static const struct asm_opcode insns[] =
 
  tCE("sevl",	320f005, _sevl,    0, (),		noargs,	t_hint),
  TUE("hlt",	1000070, ba80,     1, (oIffffb),	bkpt,	t_hlt),
- TCE("ldraex",	1900e9f, e8d00fef, 2, (RRnpc, RRnpcb),	rd_rn,	rd_rn),
- TCE("ldraexd",	1b00e9f, e8d000ff, 3, (RRnpc, oRRnpc, RRnpcb),
+ TCE("ldaex",	1900e9f, e8d00fef, 2, (RRnpc, RRnpcb),	rd_rn,	rd_rn),
+ TCE("ldaexd",	1b00e9f, e8d000ff, 3, (RRnpc, oRRnpc, RRnpcb),
 							ldrexd, t_ldrexd),
- TCE("ldraexb",	1d00e9f, e8d00fcf, 2, (RRnpc,RRnpcb),	rd_rn,  rd_rn),
- TCE("ldraexh",	1f00e9f, e8d00fdf, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
- TCE("strlex",	1800e90, e8c00fe0, 3, (RRnpc, RRnpc, RRnpcb),
-							strlex,  t_strlex),
- TCE("strlexd",	1a00e90, e8c000f0, 4, (RRnpc, RRnpc, oRRnpc, RRnpcb),
+ TCE("ldaexb",	1d00e9f, e8d00fcf, 2, (RRnpc,RRnpcb),	rd_rn,  rd_rn),
+ TCE("ldaexh",	1f00e9f, e8d00fdf, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
+ TCE("stlex",	1800e90, e8c00fe0, 3, (RRnpc, RRnpc, RRnpcb),
+							stlex,  t_stlex),
+ TCE("stlexd",	1a00e90, e8c000f0, 4, (RRnpc, RRnpc, oRRnpc, RRnpcb),
 							strexd, t_strexd),
- TCE("strlexb",	1c00e90, e8c00fc0, 3, (RRnpc, RRnpc, RRnpcb),
-							strlex, t_strlex),
- TCE("strlexh",	1e00e90, e8c00fd0, 3, (RRnpc, RRnpc, RRnpcb),
-							strlex, t_strlex),
- TCE("ldra",	1900c9f, e8d00faf, 2, (RRnpc, RRnpcb),	rd_rn,	rd_rn),
- TCE("ldrab",	1d00c9f, e8d00f8f, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
- TCE("ldrah",	1f00c9f, e8d00f9f, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
- TCE("strl",	180fc90, e8c00faf, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
- TCE("strlb",	1c0fc90, e8c00f8f, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
- TCE("strlh",	1e0fc90, e8c00f9f, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
+ TCE("stlexb",	1c00e90, e8c00fc0, 3, (RRnpc, RRnpc, RRnpcb),
+							stlex, t_stlex),
+ TCE("stlexh",	1e00e90, e8c00fd0, 3, (RRnpc, RRnpc, RRnpcb),
+							stlex, t_stlex),
+ TCE("lda",	1900c9f, e8d00faf, 2, (RRnpc, RRnpcb),	rd_rn,	rd_rn),
+ TCE("ldab",	1d00c9f, e8d00f8f, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
+ TCE("ldah",	1f00c9f, e8d00f9f, 2, (RRnpc, RRnpcb),	rd_rn,  rd_rn),
+ TCE("stl",	180fc90, e8c00faf, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
+ TCE("stlb",	1c0fc90, e8c00f8f, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
+ TCE("stlh",	1e0fc90, e8c00f9f, 2, (RRnpc, RRnpcb),	rm_rn,  rd_rn),
 
  /* ARMv8 T32 only.  */
 #undef ARM_VARIANT
@@ -19781,7 +19766,6 @@ static const struct asm_opcode insns[] =
 #undef ARM_VARIANT
 #undef THUMB_VARIANT
 #undef TCE
-#undef TCM
 #undef TUE
 #undef TUF
 #undef TCC
@@ -22068,18 +22052,18 @@ md_apply_fix (fixS *	fixP,
 
     thumb_bl_common:
 
-#ifdef OBJ_ELF
-       if (EF_ARM_EABI_VERSION (meabi_flags) >= EF_ARM_EABI_VER4
-	   && fixP->fx_r_type == BFD_RELOC_THUMB_PCREL_BLX)
-	 fixP->fx_r_type = BFD_RELOC_THUMB_PCREL_BRANCH23;
-#endif
-
       if (fixP->fx_r_type == BFD_RELOC_THUMB_PCREL_BLX)
 	/* For a BLX instruction, make sure that the relocation is rounded up
 	   to a word boundary.  This follows the semantics of the instruction
 	   which specifies that bit 1 of the target address will come from bit
 	   1 of the base address.  */
-	value = (value + 1) & ~ 1;
+	value = (value + 3) & ~ 3;
+
+#ifdef OBJ_ELF
+       if (EF_ARM_EABI_VERSION (meabi_flags) >= EF_ARM_EABI_VER4
+	   && fixP->fx_r_type == BFD_RELOC_THUMB_PCREL_BLX)
+	 fixP->fx_r_type = BFD_RELOC_THUMB_PCREL_BRANCH23;
+#endif
 
       if ((value & ~0x3fffff) && ((value & ~0x3fffff) != ~0x3fffff))
 	{

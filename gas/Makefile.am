@@ -1,4 +1,21 @@
 ## Process this file with automake to generate Makefile.in
+#
+#   Copyright 2012 Free Software Foundation
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
 
 AUTOMAKE_OPTIONS = 1.11 dejagnu foreign no-dist
 ACLOCAL_AMFLAGS = -I .. -I ../config -I ../bfd
@@ -138,6 +155,7 @@ TARGET_CPU_CFILES = \
 	config/tc-m68k.c \
 	config/tc-mcore.c \
 	config/tc-mep.c \
+	config/tc-metag.c \
 	config/tc-microblaze.c \
 	config/tc-mips.c \
 	config/tc-mmix.c \
@@ -208,6 +226,7 @@ TARGET_CPU_HFILES = \
 	config/tc-m68k.h \
 	config/tc-mcore.h \
 	config/tc-mep.h \
+	config/tc-metag.h \
 	config/tc-microblaze.h \
 	config/tc-mips.h \
 	config/tc-mmix.h \
@@ -601,7 +620,7 @@ install-exec-tooldir: install-exec-bindir $(noinst_PROGRAMS)
 
 .PHONY: bootstrap bootstrap2 bootstrap3 stage1 stage2 stage3 comparison
 
-bootstrap: as-new
+bootstrap: as-new$(EXEEXT)
 	$(MAKE) stage1
 	rm -f stage && ln -s stage1 stage
 	$(MAKE) CC="$(CC)" CFLAGS="-O -Bstage/ $(CFLAGS)" libdir=$(libdir) ALLOCA= $(noinst_PROGRAMS)

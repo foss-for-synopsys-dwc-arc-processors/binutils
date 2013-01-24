@@ -213,8 +213,7 @@ test "${LARGE_SECTIONS}" = "yes" && REL_LARGE="
   .rela.lbss    ${RELOCATING-0} : { *(.rela.lbss${RELOCATING+ .rela.lbss.* .rela.gnu.linkonce.lb.*}) }
   .rel.lrodata  ${RELOCATING-0} : { *(.rel.lrodata${RELOCATING+ .rel.lrodata.* .rel.gnu.linkonce.lr.*}) }
   .rela.lrodata ${RELOCATING-0} : { *(.rela.lrodata${RELOCATING+ .rela.lrodata.* .rela.gnu.linkonce.lr.*}) }"
-test "${LARGE_SECTIONS}" = "yes" && OTHER_BSS_SECTIONS="
-  ${OTHER_BSS_SECTIONS}
+test "${LARGE_SECTIONS}" = "yes" && LARGE_BSS="
   .lbss ${RELOCATING-0} :
   {
     *(.dynlbss)
@@ -335,7 +334,7 @@ SECTIONS
   /* Read-only sections, merged into text segment: */
   ${CREATE_SHLIB-${CREATE_PIE-${RELOCATING+PROVIDE (__executable_start = ${TEXT_START_ADDR}); . = ${TEXT_BASE_ADDRESS};}}}
   ${CREATE_SHLIB+${RELOCATING+. = ${SHLIB_TEXT_START_ADDR}${SIZEOF_HEADERS_CODE};}}
-  ${CREATE_PIE+${RELOCATING+. = ${SHLIB_TEXT_START_ADDR}${SIZEOF_HEADERS_CODE};}}
+  ${CREATE_PIE+${RELOCATING+PROVIDE (__executable_start = ${SHLIB_TEXT_START_ADDR}); . = ${SHLIB_TEXT_START_ADDR}${SIZEOF_HEADERS_CODE};}}
 EOF
 
 emit_early_ro()
@@ -492,12 +491,26 @@ cat <<EOF
 EOF
 
 if test -n "${SEPARATE_CODE}"; then
+  if test -n "${RODATA_ADDR}"; then
+    RODATA_ADDR="\
+SEGMENT_START(\"rodata-segment\", ${RODATA_ADDR}) + SIZEOF_HEADERS"
+  else
+    RODATA_ADDR="ALIGN(${SEGMENT_SIZE}) + (. & (${MAXPAGESIZE} - 1))"
+    RODATA_ADDR="SEGMENT_START(\"rodata-segment\", ${RODATA_ADDR})"
+  fi
+  if test -n "${SHLIB_RODATA_ADDR}"; then
+    SHLIB_RODATA_ADDR="\
+SEGMENT_START(\"rodata-segment\", ${SHLIB_RODATA_ADDR}) + SIZEOF_HEADERS"
+  else
+    SHLIB_RODATA_ADDR="SEGMENT_START(\"rodata-segment\", ${SHLIB_RODATA_ADDR})"
+    SHLIB_RODATA_ADDR="ALIGN(${SEGMENT_SIZE}) + (. & (${MAXPAGESIZE} - 1))"
+  fi
   cat <<EOF
   /* Adjust the address for the rodata segment.  We want to adjust up to
      the same address within the page on the next page up.  */
-  ${CREATE_SHLIB-${CREATE_PIE-${RELOCATING+. = ${RODATA_ADDR-ALIGN(${SEGMENT_SIZE}) + (. & (${MAXPAGESIZE} - 1))};}}}
-  ${CREATE_SHLIB+${RELOCATING+. = ${SHLIB_RODATA_ADDR-ALIGN(${SEGMENT_SIZE}) + (. & (${MAXPAGESIZE} - 1))};}}
-  ${CREATE_PIE+${RELOCATING+. = ${SHLIB_RODATA_ADDR-ALIGN(${SEGMENT_SIZE}) + (. & (${MAXPAGESIZE} - 1))};}}
+  ${CREATE_SHLIB-${CREATE_PIE-${RELOCATING+. = ${RODATA_ADDR};}}}
+  ${CREATE_SHLIB+${RELOCATING+. = ${SHLIB_RODATA_ADDR};}}
+  ${CREATE_PIE+${RELOCATING+. = ${SHLIB_RODATA_ADDR};}}
 EOF
   emit_early_ro
   emit_dyn
@@ -592,9 +605,20 @@ cat <<EOF
    ${RELOCATING+. = ALIGN(. != 0 ? ${ALIGNMENT} : 1);}
   }
   ${OTHER_BSS_SECTIONS}
+  ${LARGE_BSS_AFTER_BSS+${LARGE_BSS}}
   ${RELOCATING+${OTHER_BSS_END_SYMBOLS}}
   ${RELOCATING+. = ALIGN(${ALIGNMENT});}
+EOF
+
+LARGE_DATA_ADDR=". = SEGMENT_START(\"ldata-segment\", ${LARGE_DATA_ADDR-.});"
+SHLIB_LARGE_DATA_ADDR=". = SEGMENT_START(\"ldata-segment\", ${SHLIB_LARGE_DATA_ADDR-.});"
+
+  cat <<EOF
+  ${RELOCATING+${CREATE_SHLIB-${CREATE_PIE-${LARGE_DATA_ADDR}}}}
+  ${RELOCATING+${CREATE_SHLIB+${SHLIB_LARGE_DATA_ADDR}}}
+  ${RELOCATING+${CREATE_PIE+${SHLIB_LARGE_DATA_ADDR}}}
   ${LARGE_SECTIONS}
+  ${LARGE_BSS_AFTER_BSS-${LARGE_BSS}}
   ${RELOCATING+. = ALIGN(${ALIGNMENT});}
   ${RELOCATING+${OTHER_END_SYMBOLS}}
   ${RELOCATING+${END_SYMBOLS-${USER_LABEL_PREFIX}_end = .; PROVIDE (${USER_LABEL_PREFIX}end = .);}}
@@ -650,8 +674,8 @@ cat <<EOF
   .debug_ranges   0 : { *(.debug_ranges) }
 
   /* DWARF Extension.  */
-  .debug_macro    0 : { *(.debug_macro) } 
-  
+  .debug_macro    0 : { *(.debug_macro) }
+
   ${TINY_DATA_SECTION}
   ${TINY_BSS_SECTION}
 

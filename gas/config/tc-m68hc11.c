@@ -1603,11 +1603,8 @@ fixup8 (expressionS *oper, int mode, int opmode)
 
       if (mode == M6811_OP_JUMP_REL)
 	{
-	  fixS *fixp;
-
-	  fixp = fix_new_exp (frag_now, f - frag_now->fr_literal, 1,
-			      oper, TRUE, BFD_RELOC_8_PCREL);
-	  fixp->fx_pcrel_adjust = 1;
+	  fix_new_exp (frag_now, f - frag_now->fr_literal, 1,
+		       oper, TRUE, BFD_RELOC_8_PCREL);
 	}
       else
 	{
@@ -1676,8 +1673,7 @@ fixup16 (expressionS *oper, int mode, int opmode ATTRIBUTE_UNUSED)
 			  reloc == BFD_RELOC_16_PCREL,
                           reloc);
       number_to_chars_bigendian (f, 0, 2);
-      if (reloc == BFD_RELOC_16_PCREL)
-	fixp->fx_pcrel_adjust = 2;
+
       if (reloc == BFD_RELOC_M68HC11_LO16)
         fixp->fx_no_overflow = 1;
     }
@@ -1756,23 +1752,17 @@ fixup8_xg (expressionS *oper, int mode, int opmode)
     {
       if (mode == M68XG_OP_REL9)
         {
-          fixS *fixp;
-
           /* Future improvement:
 	     This fixup/reloc isn't adding on constants to symbols.  */
-          fixp = fix_new_exp (frag_now, f - frag_now->fr_literal -1, 2,
-			      oper, TRUE, BFD_RELOC_M68HC12_9_PCREL);
-          fixp->fx_pcrel_adjust = 1;
+          fix_new_exp (frag_now, f - frag_now->fr_literal -1, 2,
+		       oper, TRUE, BFD_RELOC_M68HC12_9_PCREL);
       	}
       else if (mode == M68XG_OP_REL10)
         {
-          fixS *fixp;
-
           /* Future improvement:
 	     This fixup/reloc isn't adding on constants to symbols.  */
-          fixp = fix_new_exp (frag_now, f - frag_now->fr_literal -1, 2,
-    	      oper, TRUE, BFD_RELOC_M68HC12_10_PCREL);
-          fixp->fx_pcrel_adjust = 1;
+          fix_new_exp (frag_now, f - frag_now->fr_literal -1, 2,
+    	               oper, TRUE, BFD_RELOC_M68HC12_10_PCREL);
         }
       else
         {
@@ -2229,9 +2219,9 @@ build_indexed_byte (operand *op, int format ATTRIBUTE_UNUSED, int move_insn)
 		  byte <<= 3;
 		  byte |= 0xe2;
 		  number_to_chars_bigendian (f, byte, 1);
+		  f = frag_more (2);
 		  fix_new (frag_now, f - frag_now->fr_literal, 2,
 			   sym, off, 0, BFD_RELOC_M68HC12_16B);
-		  f = frag_more (2);
 		  return 1;
 		}
 	      else
@@ -3965,7 +3955,6 @@ void
 md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, asection *sec ATTRIBUTE_UNUSED,
                  fragS *fragP)
 {
-  fixS *fixp;
   long value;
   long disp;
   char *buffer_address = fragP->fr_literal;
@@ -4018,10 +4007,9 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, asection *sec ATTRIBUTE_UNUSED,
       fragP->fr_opcode[1] = fragP->fr_opcode[0];
       fragP->fr_opcode[0] = M6811_OPCODE_PAGE2;
 
-      fixp = fix_new (fragP, fragP->fr_fix, 2,
-		      fragP->fr_symbol, fragP->fr_offset, 1,
+      fix_new (fragP, fragP->fr_fix, 2,
+	       fragP->fr_symbol, fragP->fr_offset, 1,
 		      BFD_RELOC_16_PCREL);
-      fixp->fx_pcrel_adjust = 2;
       fragP->fr_fix += 2;
       break;
 
@@ -4060,9 +4048,9 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, asection *sec ATTRIBUTE_UNUSED,
           && fragP->fr_symbol != 0
           && S_GET_SEGMENT (fragP->fr_symbol) != absolute_section)
 	{
-	  fixp = fix_new (fragP, fragP->fr_fix, 2,
-			  fragP->fr_symbol, fragP->fr_offset,
-			  1, BFD_RELOC_16_PCREL);
+	  fix_new (fragP, fragP->fr_fix, 2,
+	           fragP->fr_symbol, fragP->fr_offset,
+		   1, BFD_RELOC_16_PCREL);
 	}
       else
 	{
@@ -4471,8 +4459,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
       if (value < 0)
         value += 65536;
 
-      where[1] = (value >> 8);
-      where[2] = (value & 0xff);
+      where[0] = (value >> 8);
+      where[1] = (value & 0xff);
       break;
 
     case BFD_RELOC_M68HC11_RL_JUMP:

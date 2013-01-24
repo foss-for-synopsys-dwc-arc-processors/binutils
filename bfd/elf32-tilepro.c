@@ -737,6 +737,16 @@ struct _bfd_tilepro_elf_obj_tdata
    && elf_tdata (bfd) != NULL				\
    && elf_object_id (bfd) == TILEPRO_ELF_DATA)
 
+/* Allocate TILEPro ELF private object data.  */
+
+static bfd_boolean
+tilepro_elf_mkobject (bfd *abfd)
+{
+  return bfd_elf_allocate_object (abfd,
+				  sizeof (struct _bfd_tilepro_elf_obj_tdata),
+				  TILEPRO_ELF_DATA);
+}
+
 #include "elf/common.h"
 #include "elf/internal.h"
 
@@ -3092,7 +3102,7 @@ tilepro_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 		  local_got_offsets[r_symndx] |= 1;
 		}
 	    }
-	  relocation = htab->elf.sgot->output_offset + off - got_base;
+	  relocation = off - got_base;
 	  break;
 
         case R_TILEPRO_JOFFLONG_X1_PLT:
@@ -3511,7 +3521,7 @@ tilepro_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 	  if (off >= (bfd_vma) -2)
 	    abort ();
 
-	  relocation = htab->elf.sgot->output_offset + off - got_base;
+	  relocation = off - got_base;
 	  unresolved_reloc = FALSE;
 	  howto = tilepro_elf_howto_table + r_type;
 	  break;
@@ -3787,7 +3797,7 @@ tilepro_elf_finish_dynamic_symbol (bfd *output_bfd,
     }
 
   /* Mark some specially defined symbols as absolute. */
-  if (strcmp (h->root.root.string, "_DYNAMIC") == 0
+  if (h == htab->elf.hdynamic
       || (h == htab->elf.hgot || h == htab->elf.hplt))
     sym->st_shndx = SHN_ABS;
 
@@ -4007,6 +4017,8 @@ tilepro_additional_program_headers (bfd *abfd,
 #define elf_backend_grok_prstatus            tilepro_elf_grok_prstatus
 #define elf_backend_grok_psinfo              tilepro_elf_grok_psinfo
 #define elf_backend_additional_program_headers tilepro_additional_program_headers
+
+#define bfd_elf32_mkobject		     tilepro_elf_mkobject
 
 #define elf_backend_init_index_section	_bfd_elf_init_1_index_section
 

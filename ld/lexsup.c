@@ -175,6 +175,9 @@ static const struct ld_option ld_options[] =
     '\0', NULL, N_("Ignored for GCC LTO option compatibility"),
     ONE_DASH },
 #endif /* ENABLE_PLUGINS */
+  { {"fuse-ld=", required_argument, NULL, OPTION_IGNORE},
+    '\0', NULL, N_("Ignored for GCC linker option compatibility"),
+    ONE_DASH },
   { {"Qy", no_argument, NULL, OPTION_IGNORE},
     '\0', NULL, N_("Ignored for SVR4 compatibility"), ONE_DASH },
   { {"emit-relocs", no_argument, NULL, 'q'},
@@ -405,13 +408,13 @@ static const struct ld_option ld_options[] =
   { {"pic-executable", no_argument, NULL, OPTION_PIE},
     '\0', NULL, NULL, TWO_DASHES },
   { {"sort-common", optional_argument, NULL, OPTION_SORT_COMMON},
-    '\0', N_("[=ascending|descending]"), 
-    N_("Sort common symbols by alignment [in specified order]"), 
+    '\0', N_("[=ascending|descending]"),
+    N_("Sort common symbols by alignment [in specified order]"),
     TWO_DASHES },
   { {"sort_common", no_argument, NULL, OPTION_SORT_COMMON},
     '\0', NULL, NULL, NO_HELP },
   { {"sort-section", required_argument, NULL, OPTION_SORT_SECTION},
-    '\0', N_("name|alignment"), 
+    '\0', N_("name|alignment"),
     N_("Sort sections by name or maximum alignment"), TWO_DASHES },
   { {"spare-dynamic-tags", required_argument, NULL, OPTION_SPARE_DYNAMIC_TAGS},
     '\0', N_("COUNT"), N_("How many tags to reserve in .dynamic section"),
@@ -441,6 +444,10 @@ static const struct ld_option ld_options[] =
     '\0', N_("ADDRESS"), N_("Set address of .text section"), ONE_DASH },
   { {"Ttext-segment", required_argument, NULL, OPTION_TTEXT_SEGMENT},
     '\0', N_("ADDRESS"), N_("Set address of text segment"), ONE_DASH },
+  { {"Trodata-segment", required_argument, NULL, OPTION_TRODATA_SEGMENT},
+    '\0', N_("ADDRESS"), N_("Set address of rodata segment"), ONE_DASH },
+  { {"Tldata-segment", required_argument, NULL, OPTION_TLDATA_SEGMENT},
+    '\0', N_("ADDRESS"), N_("Set address of ldata segment"), ONE_DASH },
   { {"unresolved-symbols=<method>", required_argument, NULL,
      OPTION_UNRESOLVED_SYMBOLS},
     '\0', NULL, N_("How to handle unresolved symbols.  <method> is:\n"
@@ -496,6 +503,10 @@ static const struct ld_option ld_options[] =
     TWO_DASHES },
   { {"wrap", required_argument, NULL, OPTION_WRAP},
     '\0', N_("SYMBOL"), N_("Use wrapper functions for SYMBOL"), TWO_DASHES },
+  { {"ignore-unresolved-symbol", required_argument, NULL,
+    OPTION_IGNORE_UNRESOLVED_SYMBOL},
+    '\0', N_("SYMBOL"),
+    N_("Unresolved SYMBOL will not cause an error or warning"), TWO_DASHES },
 };
 
 #define OPTION_COUNT ARRAY_SIZE (ld_options)
@@ -950,9 +961,7 @@ parse_args (unsigned argc, char **argv)
 	  break;
 #ifdef ENABLE_PLUGINS
 	case OPTION_PLUGIN:
-	  if (plugin_opt_plugin (optarg))
-	    einfo (_("%P%F: %s: error loading plugin\n"),
-		   plugin_error_plugin ());
+	  plugin_opt_plugin (optarg);
 	  break;
 	case OPTION_PLUGIN_OPT:
 	  if (plugin_opt_plugin_arg (optarg))
@@ -1189,6 +1198,12 @@ parse_args (unsigned argc, char **argv)
 	case OPTION_TTEXT_SEGMENT:
 	  set_segment_start (".text-segment", optarg);
 	  break;
+	case OPTION_TRODATA_SEGMENT:
+	  set_segment_start (".rodata-segment", optarg);
+	  break;
+	case OPTION_TLDATA_SEGMENT:
+	  set_segment_start (".ldata-segment", optarg);
+	  break;
 	case OPTION_TRADITIONAL_FORMAT:
 	  link_info.traditional_format = TRUE;
 	  break;
@@ -1340,6 +1355,9 @@ parse_args (unsigned argc, char **argv)
 	  break;
 	case OPTION_WRAP:
 	  add_wrap (optarg);
+	  break;
+	case OPTION_IGNORE_UNRESOLVED_SYMBOL:
+	  add_ignoresym (&link_info, optarg);
 	  break;
 	case OPTION_DISCARD_NONE:
 	  link_info.discard = discard_none;

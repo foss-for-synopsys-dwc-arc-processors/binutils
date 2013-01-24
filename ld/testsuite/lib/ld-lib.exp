@@ -179,13 +179,18 @@ proc big_or_little_endian {} {
 proc default_ld_link { ld target objects } {
     global HOSTING_EMU
     global HOSTING_CRT0
+    global HOSTING_SCRT0
     global HOSTING_LIBS
     global LIBS
     global host_triplet
     global link_output
     global exec_output
 
-    set objs "$HOSTING_CRT0 $objects"
+    if { [ string match "* -pie *" $objects ] } {
+	set objs "$HOSTING_SCRT0 $objects"
+    } else {
+	set objs "$HOSTING_CRT0 $objects"
+    }
     set libs "$LIBS $HOSTING_LIBS"
 
     if [is_endian_output_format $objects] then {
@@ -757,6 +762,12 @@ proc run_dump_test { name {extra_options {}} } {
 	set dfile $srcdir/$subdir/$opts(dump)
     }
 
+    if { [string match "*--compress-debug-sections*" $opts(as)] \
+	 && ![is_zlib_supported] } {
+	unsupported $testname
+	return
+    }
+
     # Time to setup xfailures.
     foreach targ $opts(xfail) {
 	setup_xfail $targ
@@ -975,7 +986,7 @@ proc set_file_contents { filename contents } {
 proc ar_simple_create { ar aropts target objects } {
     remote_file host delete $target
 
-    set exec_output [run_host_cmd "$ar" "$aropts rc $target $objects"]
+    set exec_output [run_host_cmd "$ar" "$aropts -rc $target $objects"]
     set exec_output [prune_warnings $exec_output]
 
     if [string match "" $exec_output] then {
@@ -1244,7 +1255,6 @@ proc run_ld_link_exec_tests { targets_to_xfail ldtests } {
 #	verbose -log "ld_options is $ld_options"
 #	verbose -log "as_options is $as_options"
 #	verbose -log "src_files is $src_files"
-#	verbose -log "actions is $actions"
 #	verbose -log "binfile is $binfile"
 
 	# Assemble each file in the test.
@@ -1261,68 +1271,68 @@ proc run_ld_link_exec_tests { targets_to_xfail ldtests } {
 	    } else {
 		ld_compile "$CC -c $CFLAGS $cflags" $srcdir/$subdir/$src_file $objfile
 	    }
+	}
 
-	    # We have to use $CC to build PIE and shared library.
-	    if { [ string match "c" $lang ] } {
-		set link_proc ld_simple_link
-		set link_cmd $CC
-	    } elseif { [ string match "c++" $lang ] } {
-		set link_proc ld_simple_link
-		set link_cmd $CXX
-	    } elseif { [ string match "-shared" $ld_options ] \
-		 || [ string match "-pie" $ld_options ] } {
-		set link_proc ld_simple_link
-		set link_cmd $CC
+	# We have to use $CC to build PIE and shared library.
+	if { [ string match "c" $lang ] } {
+	    set link_proc ld_simple_link
+	    set link_cmd $CC
+	} elseif { [ string match "c++" $lang ] } {
+	    set link_proc ld_simple_link
+	    set link_cmd $CXX
+	} elseif { [ string match "-shared" $ld_options ] \
+		   || [ string match "-pie" $ld_options ] } {
+	    set link_proc ld_simple_link
+	    set link_cmd $CC
+	} else {
+	    set link_proc ld_link
+	    set link_cmd $ld
+	}
+
+	if ![$link_proc $link_cmd $binfile "-L$srcdir/$subdir $ld_options $objfiles"] {
+	    set failed 1
+	} else {
+	    set failed 0
+	}
+
+	# Check if exec_output is expected.
+	if { $warning != "" } then {
+	    verbose -log "returned with: <$exec_output>, expected: <$warning>"
+	    if { [regexp $warning $exec_output] } then {
+		set failed 0
 	    } else {
-		set link_proc ld_link
-		set link_cmd $ld
+		set failed 1
 	    }
+	}
 
-	    if ![$link_proc $link_cmd $binfile "-L$srcdir/$subdir $ld_options $objfiles"] {
+	if { $failed == 0 } {
+	    send_log "Running: $binfile > $binfile.out\n"
+	    verbose "Running: $binfile > $binfile.out"
+	    catch "exec $binfile > $binfile.out" exec_output
+
+	    if ![string match "" $exec_output] then {
+		send_log "$exec_output\n"
+		verbose "$exec_output" 1
 		set failed 1
 	    } else {
-		set failed 0
-	    }
-
-	    # Check if exec_output is expected.
-	    if { $warning != "" } then {
-		verbose -log "returned with: <$exec_output>, expected: <$warning>"
-		if { [regexp $warning $exec_output] } then {
-		    set failed 0
-		} else {
-		    set failed 1
-		}
-	    }
-
-	    if { $failed == 0 } {
-		send_log "Running: $binfile > $binfile.out\n"
-		verbose "Running: $binfile > $binfile.out"
-		catch "exec $binfile > $binfile.out" exec_output
+		send_log "diff $binfile.out $srcdir/$subdir/$expfile\n"
+		verbose "diff $binfile.out $srcdir/$subdir/$expfile"
+		catch "exec diff $binfile.out $srcdir/$subdir/$expfile" exec_output
+		set exec_output [prune_warnings $exec_output]
 
 		if ![string match "" $exec_output] then {
 		    send_log "$exec_output\n"
 		    verbose "$exec_output" 1
 		    set failed 1
-		} else {
-		    send_log "diff $binfile.out $srcdir/$subdir/$expfile\n"
-		    verbose "diff $binfile.out $srcdir/$subdir/$expfile"
-		    catch "exec diff $binfile.out $srcdir/$subdir/$expfile" exec_output
-		    set exec_output [prune_warnings $exec_output]
-
-		    if ![string match "" $exec_output] then {
-			send_log "$exec_output\n"
-			verbose "$exec_output" 1
-			set failed 1
-		    }
 		}
 	    }
+	}
 
-	    if { $failed != 0 } {
-		fail $testname
-	    } else {
-		set errcnt 0
-		pass $testname
-	    }
+	if { $failed != 0 } {
+	    fail $testname
+	} else {
+	    set errcnt 0
+	    pass $testname
 	}
     }
 }
@@ -1402,21 +1412,26 @@ proc run_cc_link_tests { ldtests } {
 	    } else {
 		set failed 0
 	    }
-	} elseif { ![ld_simple_link $cc_cmd $binfile "-L$srcdir/$subdir $ldflags $objfiles"] } {
+	} else {
+	    if { ![ld_simple_link $cc_cmd $binfile "-L$srcdir/$subdir $ldflags $objfiles"] } {
+		set failed 1
+	    } else {
+		set failed 0
+	    }
+
 	    # Check if exec_output is expected.
 	    if { $warnings != "" } then {
 		verbose -log "returned with: <$exec_output>, expected: <$warnings>"
 		if { [regexp $warnings $exec_output] } then {
-		    set failed 0
+		    set failed 2
 		} else {
 		    set failed 1
 		}
-	    } else {
-		fail $testname
-		set failed 1
 	    }
-	} else {
-	    set failed 0
+
+	    if { $failed == 1 } {
+		fail $testname
+	    }
 	}
 
 	if { $failed == 0 } {
@@ -1545,7 +1560,9 @@ proc check_gc_sections_available { } {
 # Only used and accurate for ELF targets at the moment
 
 proc check_shared_lib_support { } {
-    if {![istarget arc-*-*]
+    if {![istarget aarch64*-*-elf]
+	 && ![istarget arc-*-*]
+	 && ![istarget arm*-*-elf]
 	 && ![istarget avr-*-*]
 	 && ![istarget cr16-*-*]
 	 && ![istarget cris*-*-*]
@@ -1602,6 +1619,34 @@ proc check_plugin_api_available { } {
 	}
     }
     return $plugin_api_available_saved
+}
+
+# Returns true if the target compiler supports LTO
+proc check_lto_available { } {
+    global lto_available_saved
+    global CC
+    if {![info exists lto_available_saved]} {
+	# Check if gcc supports -flto -fuse-linker-plugin
+	if { [which $CC] == 0 } {
+	    set lto_available_saved 0
+	    return 0
+	}
+	set basename "lto"
+	set src ${basename}[pid].c
+	set output ${basename}[pid].so
+	set f [open $src "w"]
+	puts $f ""
+	close $f
+	set status [remote_exec host $CC "-shared -B[pwd]/tmpdir/ld/ -flto -fuse-linker-plugin $src -o $output"]
+	if { [lindex $status 0] == 0 } {
+	    set lto_available_saved 1
+	} else {
+	    set lto_available_saved 0
+	}
+	file delete $src
+	file delete $output
+    }
+    return $lto_available_saved
 }
 
 # Check if the assembler supports CFI statements.

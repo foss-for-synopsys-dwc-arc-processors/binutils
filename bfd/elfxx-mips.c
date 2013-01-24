@@ -1,6 +1,6 @@
 /* MIPS-specific support for ELF
    Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+   2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
    Free Software Foundation, Inc.
 
    Most of the information added by Ian Lance Taylor, Cygnus Support,
@@ -432,8 +432,8 @@ struct mips_elf_link_hash_table
   /* The size of the .compact_rel section (if SGI_COMPAT).  */
   bfd_size_type compact_rel_size;
 
-  /* This flag indicates that the value of DT_MIPS_RLD_MAP dynamic
-     entry is set to the address of __rld_obj_head as in IRIX5.  */
+  /* This flag indicates that the value of DT_MIPS_RLD_MAP dynamic entry
+     is set to the address of __rld_obj_head as in IRIX5 and IRIX6.  */
   bfd_boolean use_rld_obj_head;
 
   /* The  __rld_map or __rld_obj_head symbol. */
@@ -514,6 +514,22 @@ struct mips_htab_traverse_info
   /* Starts off FALSE and is set to TRUE if the link should be aborted.  */
   bfd_boolean error;
 };
+
+/* MIPS ELF private object data.  */
+
+struct mips_elf_obj_tdata
+{
+  /* Generic ELF private object data.  */
+  struct elf_obj_tdata root;
+
+  /* Input BFD providing Tag_GNU_MIPS_ABI_FP attribute for output.  */
+  bfd *abi_fp_bfd;
+};
+
+/* Get MIPS ELF private object data from BFD's tdata.  */
+
+#define mips_elf_tdata(bfd) \
+  ((struct mips_elf_obj_tdata *) (bfd)->tdata.any)
 
 #define TLS_RELOC_P(r_type) \
   (r_type == R_MIPS_TLS_DTPMOD32		\
@@ -1113,6 +1129,15 @@ mips_elf_link_hash_newfunc (struct bfd_hash_entry *entry,
     }
 
   return (struct bfd_hash_entry *) ret;
+}
+
+/* Allocate MIPS ELF private object data.  */
+
+bfd_boolean
+_bfd_mips_elf_mkobject (bfd *abfd)
+{
+  return bfd_elf_allocate_object (abfd, sizeof (struct mips_elf_obj_tdata),
+				  MIPS_ELF_DATA);
 }
 
 bfd_boolean
@@ -5305,7 +5330,7 @@ mips_elf_calculate_relocation (bfd *abfd, bfd *input_bfd,
 	  if (h->call_stub != NULL && h->call_fp_stub != NULL)
 	    {
 	      asection *o;
-	      
+
 	      sec = NULL;
 	      for (o = input_bfd->sections; o != NULL; o = o->next)
 		{
@@ -5894,7 +5919,7 @@ mips_elf_obtain_contents (reloc_howto_type *howto,
 /* It has been determined that the result of the RELOCATION is the
    VALUE.  Use HOWTO to place VALUE into the output file at the
    appropriate position.  The SECTION is the section to which the
-   relocation applies.  
+   relocation applies.
    CROSS_MODE_JUMP_P is true if the relocation field
    is a MIPS16 or microMIPS jump to standard MIPS code, or vice versa.
 
@@ -6268,6 +6293,9 @@ _bfd_elf_mips_mach (flagword flags)
 
     case E_MIPS_MACH_5500:
       return bfd_mach_mips5500;
+
+    case E_MIPS_MACH_5900:
+      return bfd_mach_mips5900;
 
     case E_MIPS_MACH_9000:
       return bfd_mach_mips9000;
@@ -7268,7 +7296,7 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
     return FALSE;
   htab->sstubs = s;
 
-  if ((IRIX_COMPAT (abfd) == ict_irix5 || IRIX_COMPAT (abfd) == ict_none)
+  if (!mips_elf_hash_table (info)->use_rld_obj_head
       && !info->shared
       && bfd_get_linker_section (abfd, ".rld_map") == NULL)
     {
@@ -7812,14 +7840,14 @@ _bfd_mips_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	{
 	  h = ((struct mips_elf_link_hash_entry *)
 	       sym_hashes[r_symndx - extsymoff]);
-	  
+
 	  /* H is the symbol this stub is for.  */
-	  
+
 	  if (CALL_FP_STUB_P (name))
 	    loc = &h->call_fp_stub;
 	  else
 	    loc = &h->call_stub;
-	  
+
 	  /* If we already have an appropriate stub for this function, we
 	     don't need another one, so we can discard this one.  Since
 	     this function is called before the linker maps input sections
@@ -8543,7 +8571,7 @@ allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
   if (! info->relocatable
       && hmips->possibly_dynamic_relocs != 0
       && (h->root.type == bfd_link_hash_defweak
-	  || !h->def_regular
+	  || (!h->def_regular && !ELF_COMMON_DEF_P (h))
 	  || info->shared))
     {
       bfd_boolean do_copy = TRUE;
@@ -10129,7 +10157,7 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
 
   /* Mark _DYNAMIC and _GLOBAL_OFFSET_TABLE_ as absolute.  */
   name = h->root.root.string;
-  if (strcmp (name, "_DYNAMIC") == 0
+  if (h == elf_hash_table (info)->hdynamic
       || h == elf_hash_table (info)->hgot)
     sym->st_shndx = SHN_ABS;
   else if (strcmp (name, "_DYNAMIC_LINK") == 0
@@ -10999,6 +11027,10 @@ mips_set_isa_flags (bfd *abfd)
 
     case bfd_mach_mips5500:
       val = E_MIPS_ARCH_4 | E_MIPS_MACH_5500;
+      break;
+
+    case bfd_mach_mips5900:
+      val = E_MIPS_ARCH_3 | E_MIPS_MACH_5900;
       break;
 
     case bfd_mach_mips9000:
@@ -13683,6 +13715,7 @@ static const struct mips_mach_extension mips_mach_extensions[] = {
   { bfd_mach_mips4300, bfd_mach_mips4000 },
   { bfd_mach_mips4100, bfd_mach_mips4000 },
   { bfd_mach_mips4010, bfd_mach_mips4000 },
+  { bfd_mach_mips5900, bfd_mach_mips4000 },
 
   /* MIPS32 extensions.  */
   { bfd_mach_mipsisa32r2, bfd_mach_mipsisa32 },
@@ -13749,6 +13782,12 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 {
   obj_attribute *in_attr;
   obj_attribute *out_attr;
+  bfd *abi_fp_bfd;
+
+  abi_fp_bfd = mips_elf_tdata (obfd)->abi_fp_bfd;
+  in_attr = elf_known_obj_attributes (ibfd)[OBJ_ATTR_GNU];
+  if (!abi_fp_bfd && in_attr[Tag_GNU_MIPS_ABI_FP].i != 0)
+    mips_elf_tdata (obfd)->abi_fp_bfd = ibfd;
 
   if (!elf_known_obj_attributes_proc (obfd)[0].i)
     {
@@ -13764,24 +13803,13 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 
   /* Check for conflicting Tag_GNU_MIPS_ABI_FP attributes and merge
      non-conflicting ones.  */
-  in_attr = elf_known_obj_attributes (ibfd)[OBJ_ATTR_GNU];
   out_attr = elf_known_obj_attributes (obfd)[OBJ_ATTR_GNU];
   if (in_attr[Tag_GNU_MIPS_ABI_FP].i != out_attr[Tag_GNU_MIPS_ABI_FP].i)
     {
       out_attr[Tag_GNU_MIPS_ABI_FP].type = 1;
       if (out_attr[Tag_GNU_MIPS_ABI_FP].i == 0)
 	out_attr[Tag_GNU_MIPS_ABI_FP].i = in_attr[Tag_GNU_MIPS_ABI_FP].i;
-      else if (in_attr[Tag_GNU_MIPS_ABI_FP].i == 0)
-	;
-      else if (in_attr[Tag_GNU_MIPS_ABI_FP].i > 4)
-	_bfd_error_handler
-	  (_("Warning: %B uses unknown floating point ABI %d"), ibfd,
-	   in_attr[Tag_GNU_MIPS_ABI_FP].i);
-      else if (out_attr[Tag_GNU_MIPS_ABI_FP].i > 4)
-	_bfd_error_handler
-	  (_("Warning: %B uses unknown floating point ABI %d"), obfd,
-	   out_attr[Tag_GNU_MIPS_ABI_FP].i);
-      else
+      else if (in_attr[Tag_GNU_MIPS_ABI_FP].i != 0)
 	switch (out_attr[Tag_GNU_MIPS_ABI_FP].i)
 	  {
 	  case 1:
@@ -13789,24 +13817,30 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 	      {
 	      case 2:
 		_bfd_error_handler
-		  (_("Warning: %B uses -msingle-float, %B uses -mdouble-float"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-mdouble-float", "-msingle-float");
 		break;
 
 	      case 3:
 		_bfd_error_handler
-		  (_("Warning: %B uses hard float, %B uses soft float"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-mhard-float", "-msoft-float");
 		break;
 
 	      case 4:
 		_bfd_error_handler
-		  (_("Warning: %B uses -msingle-float, %B uses -mips32r2 -mfp64"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-mdouble-float", "-mips32r2 -mfp64");
 		break;
 
 	      default:
-		abort ();
+		_bfd_error_handler
+		  (_("Warning: %B uses %s (set by %B), "
+		     "%B uses unknown floating point ABI %d"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-mdouble-float", in_attr[Tag_GNU_MIPS_ABI_FP].i);
+		break;
 	      }
 	    break;
 
@@ -13815,24 +13849,30 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 	      {
 	      case 1:
 		_bfd_error_handler
-		  (_("Warning: %B uses -msingle-float, %B uses -mdouble-float"),
-		   ibfd, obfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-msingle-float", "-mdouble-float");
 		break;
 
 	      case 3:
 		_bfd_error_handler
-		  (_("Warning: %B uses hard float, %B uses soft float"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-mhard-float", "-msoft-float");
 		break;
 
 	      case 4:
 		_bfd_error_handler
-		  (_("Warning: %B uses -mdouble-float, %B uses -mips32r2 -mfp64"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-msingle-float", "-mips32r2 -mfp64");
 		break;
 
 	      default:
-		abort ();
+		_bfd_error_handler
+		  (_("Warning: %B uses %s (set by %B), "
+		     "%B uses unknown floating point ABI %d"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-msingle-float", in_attr[Tag_GNU_MIPS_ABI_FP].i);
+		break;
 	      }
 	    break;
 
@@ -13843,12 +13883,17 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 	      case 2:
 	      case 4:
 		_bfd_error_handler
-		  (_("Warning: %B uses hard float, %B uses soft float"),
-		   ibfd, obfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-msoft-float", "-mhard-float");
 		break;
 
 	      default:
-		abort ();
+		_bfd_error_handler
+		  (_("Warning: %B uses %s (set by %B), "
+		     "%B uses unknown floating point ABI %d"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-msoft-float", in_attr[Tag_GNU_MIPS_ABI_FP].i);
+		break;
 	      }
 	    break;
 
@@ -13857,29 +13902,79 @@ mips_elf_merge_obj_attributes (bfd *ibfd, bfd *obfd)
 	      {
 	      case 1:
 		_bfd_error_handler
-		  (_("Warning: %B uses -msingle-float, %B uses -mips32r2 -mfp64"),
-		   ibfd, obfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-mips32r2 -mfp64", "-mdouble-float");
 		break;
 
 	      case 2:
 		_bfd_error_handler
-		  (_("Warning: %B uses -mdouble-float, %B uses -mips32r2 -mfp64"),
-		   ibfd, obfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-mips32r2 -mfp64", "-msingle-float");
 		break;
 
 	      case 3:
 		_bfd_error_handler
-		  (_("Warning: %B uses hard float, %B uses soft float"),
-		   obfd, ibfd);
+		  (_("Warning: %B uses %s (set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd, "-mhard-float", "-msoft-float");
 		break;
 
 	      default:
-		abort ();
+		_bfd_error_handler
+		  (_("Warning: %B uses %s (set by %B), "
+		     "%B uses unknown floating point ABI %d"),
+		   obfd, abi_fp_bfd, ibfd,
+		   "-mips32r2 -mfp64", in_attr[Tag_GNU_MIPS_ABI_FP].i);
+		break;
 	      }
 	    break;
 
 	  default:
-	    abort ();
+	    switch (in_attr[Tag_GNU_MIPS_ABI_FP].i)
+	      {
+	      case 1:
+		_bfd_error_handler
+		  (_("Warning: %B uses unknown floating point ABI %d "
+		     "(set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   out_attr[Tag_GNU_MIPS_ABI_FP].i, "-mdouble-float");
+		break;
+
+	      case 2:
+		_bfd_error_handler
+		  (_("Warning: %B uses unknown floating point ABI %d "
+		     "(set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   out_attr[Tag_GNU_MIPS_ABI_FP].i, "-msingle-float");
+		break;
+
+	      case 3:
+		_bfd_error_handler
+		  (_("Warning: %B uses unknown floating point ABI %d "
+		     "(set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   out_attr[Tag_GNU_MIPS_ABI_FP].i, "-msoft-float");
+		break;
+
+	      case 4:
+		_bfd_error_handler
+		  (_("Warning: %B uses unknown floating point ABI %d "
+		     "(set by %B), %B uses %s"),
+		   obfd, abi_fp_bfd, ibfd,
+		   out_attr[Tag_GNU_MIPS_ABI_FP].i, "-mips32r2 -mfp64");
+		break;
+
+	      default:
+		_bfd_error_handler
+		  (_("Warning: %B uses unknown floating point ABI %d "
+		     "(set by %B), %B uses unknown floating point ABI %d"),
+		   obfd, abi_fp_bfd, ibfd,
+		   out_attr[Tag_GNU_MIPS_ABI_FP].i,
+		   in_attr[Tag_GNU_MIPS_ABI_FP].i);
+		break;
+	      }
+	    break;
 	  }
     }
 
@@ -13937,7 +14032,7 @@ _bfd_mips_elf_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
 
       if (bfd_get_arch (obfd) == bfd_get_arch (ibfd)
 	  && (bfd_get_arch_info (obfd)->the_default
-	      || mips_mach_extends_p (bfd_get_mach (obfd), 
+	      || mips_mach_extends_p (bfd_get_mach (obfd),
 				      bfd_get_mach (ibfd))))
 	{
 	  if (! bfd_set_arch_mach (obfd, bfd_get_arch (ibfd),

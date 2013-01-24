@@ -2009,7 +2009,7 @@ find_abstract_instance_name (struct comp_unit *unit,
 
       info_ptr = unit->sec_info_ptr + die_ref;
     }
-  else 
+  else
     info_ptr = unit->info_ptr_unit + die_ref;
   abbrev_number = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
   info_ptr += bytes_read;
@@ -3508,10 +3508,10 @@ find_line (bfd *abfd,
 	    stash->all_comp_units->prev_unit = each;
 	  else
 	    stash->last_comp_unit = each;
-	  
+
 	  each->next_unit = stash->all_comp_units;
 	  stash->all_comp_units = each;
-	  
+
 	  /* DW_AT_low_pc and DW_AT_high_pc are optional for
 	     compilation units.  If we don't have them (i.e.,
 	     unit->high == 0), we need to consult the line info table
@@ -3624,7 +3624,7 @@ _bfd_dwarf2_find_inliner_info (bfd *abfd ATTRIBUTE_UNUSED,
 void
 _bfd_dwarf2_cleanup_debug_info (bfd *abfd, void **pinfo)
 {
-  struct dwarf2_debug *stash = (struct dwarf2_debug *) *pinfo;;
+  struct dwarf2_debug *stash = (struct dwarf2_debug *) *pinfo;
   struct comp_unit *each;
 
   if (abfd == NULL || stash == NULL)

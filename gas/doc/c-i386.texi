@@ -49,7 +49,7 @@ extending the Intel architecture to 64-bits.
 @cindex options for i386
 @cindex options for x86-64
 @cindex i386 options
-@cindex x86-64 options 
+@cindex x86-64 options
 
 The i386 version of @code{@value{AS}} has a few machine
 dependent options:
@@ -92,7 +92,7 @@ affect using @samp{#} for starting a comment.
 This option specifies the target processor.  The assembler will
 issue an error message if an attempt is made to assemble an instruction
 which will not execute on the target processor.  The following
-processor names are recognized: 
+processor names are recognized:
 @code{i8086},
 @code{i186},
 @code{i286},
@@ -120,12 +120,13 @@ processor names are recognized:
 @code{amdfam10},
 @code{bdver1},
 @code{bdver2},
+@code{bdver3},
 @code{btver1},
 @code{btver2},
 @code{generic32} and
 @code{generic64}.
 
-In addition to the basic instruction set, the assembler can be told to 
+In addition to the basic instruction set, the assembler can be told to
 accept various extension mnemonics.  For example,
 @code{-march=i686+sse4+vmx} extends @var{i686} with @var{sse4} and
 @var{vmx}.  The following extensions are currently supported:
@@ -171,6 +172,7 @@ accept various extension mnemonics.  For example,
 @code{lwp},
 @code{fma4},
 @code{xop},
+@code{cx16},
 @code{syscall},
 @code{rdtscp},
 @code{3dnow},
@@ -229,7 +231,7 @@ with 256bit vector length.
 @cindex @samp{-mmnemonic=} option, x86-64
 @item -mmnemonic=@var{att}
 @itemx -mmnemonic=@var{intel}
-This option specifies instruction mnemonic for matching instructions. 
+This option specifies instruction mnemonic for matching instructions.
 The @code{.att_mnemonic} and @code{.intel_mnemonic} directives will
 take precedent.
 
@@ -237,7 +239,7 @@ take precedent.
 @cindex @samp{-msyntax=} option, x86-64
 @item -msyntax=@var{att}
 @itemx -msyntax=@var{intel}
-This option specifies instruction syntax when processing instructions. 
+This option specifies instruction syntax when processing instructions.
 The @code{.att_syntax} and @code{.intel_syntax} directives will
 take precedent.
 
@@ -901,7 +903,7 @@ For detailed information on the LWP instruction set, see the
 
 BMI instructions provide several instructions implementing individual
 bit manipulation operations such as isolation, masking, setting, or
-resetting.  
+resetting.
 
 @c Need to add a specification citation here when available.
 
@@ -1014,7 +1016,7 @@ supported on the CPU specified.  The choices for @var{cpu_type} are:
 @item @samp{prescott} @tab @samp{nocona} @tab @samp{core} @tab @samp{core2}
 @item @samp{corei7} @tab @samp{l1om} @tab @samp{k1om}
 @item @samp{k6} @tab @samp{k6_2} @tab @samp{athlon} @tab @samp{k8}
-@item @samp{amdfam10} @tab @samp{bdver1} @tab @samp{bdver2}
+@item @samp{amdfam10} @tab @samp{bdver1} @tab @samp{bdver2} @tab @samp{bdver3}
 @item @samp{btver1} @tab @samp{btver2}
 @item @samp{generic32} @tab @samp{generic64}
 @item @samp{.mmx} @tab @samp{.sse} @tab @samp{.sse2} @tab @samp{.sse3}
@@ -1027,7 +1029,7 @@ supported on the CPU specified.  The choices for @var{cpu_type} are:
 @item @samp{.rtm} @tab @samp{.adx} @tab @samp{.rdseed} @tab @samp{.prfchw}
 @item @samp{.3dnow} @tab @samp{.3dnowa} @tab @samp{.sse4a} @tab @samp{.sse5}
 @item @samp{.syscall} @tab @samp{.rdtscp} @tab @samp{.svme} @tab @samp{.abm}
-@item @samp{.lwp} @tab @samp{.fma4} @tab @samp{.xop}
+@item @samp{.lwp} @tab @samp{.fma4} @tab @samp{.xop} @tab @samp{.cx16}
 @item @samp{.padlock}
 @end multitable
 

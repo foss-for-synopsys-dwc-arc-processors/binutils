@@ -536,3 +536,11 @@
 	orr	x0, x0, #0xff lsl #1
 
 	mov	x0, ##5
+
+	msr	daifset, x0
+	msr	daifclr, x0
+
+	// No 16-byte relocation
+	ldr	q0, =one_label
+
+one_label:

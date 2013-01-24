@@ -113,7 +113,7 @@ sb_scrub_and_add_sb (sb *ptr, sb *s)
 {
   sb_to_scrub = s;
   scrub_position = s->ptr;
-  
+
   sb_check (ptr, s->len);
   ptr->len += do_scrub_chars (scrub_from_sb, ptr->ptr + ptr->len, s->len);
 
@@ -137,7 +137,10 @@ sb_check (sb *ptr, size_t len)
       if ((ssize_t) want < 0)
 	as_fatal ("string buffer overflow");
 #if GCC_VERSION >= 3004
-      max = (size_t) 1 << (CHAR_BIT * sizeof (want) - __builtin_clzl (want));
+      max = (size_t) 1 << (CHAR_BIT * sizeof (want)
+			   - (sizeof (want) <= sizeof (long)
+			      ? __builtin_clzl ((long) want)
+			      : __builtin_clzll ((long long) want)));
 #else
       max = 128;
       while (want > max)

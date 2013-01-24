@@ -6,7 +6,7 @@
 	// The preferred architectural syntax does not accept the shifter
 	// LSL or any other shift operator, when the destination register
 	// has the shape of 16B or 8B.
-	movi	v0.16b, 97, lsl 0
+	movi	v0.16b, 97, lsl 0	// N.B.: this is now part of the architecture specification.
 
 	// LDR Wt, label | =value
 	// As a convenience assemblers will typically permit the notation
@@ -49,6 +49,17 @@ u16_lable:
 	adds	x0, sp, x0, uxtb #4
 	adds	x0, sp, x0, uxth #4
 	adds	x0, sp, x0, uxtw #4
+
 	adds	x0, sp, x0, sxtb #0
 	adds	x0, sp, x0, sxth #1
 	adds	x0, sp, x0, sxtw #2
+
+	// More tests on
+	// LDR Wt, label | =value
+	// Find more comment above.
+	ldr	q0, =0xdeadcafebeefbabe0123456789abcedf
+	ldr	d0, =0xfebeefbabe012345
+	ldr	x0, =0xfebeefbabe012345
+	ldr	s0, =0xdeadbeef
+	ldr	w0, =0xdeadbeef
+	ldr	x0, =u16_lable
