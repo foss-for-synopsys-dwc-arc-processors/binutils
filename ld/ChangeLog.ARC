@@ -1,3 +1,9 @@
+2013-02-05  Simon Cook  <simon.cook@embecosm.com>
+
+	* configure.tgt: Split elf and uClibc default emulation script definitons.
+	* Makefile.am: Correct emulation sources file names.
+	* Makefile.in: Regenerated.
+
 2012-10-19  Simon Cook  <simon.cook@embecosm.com>
 
 	* scripttempl/arclinux.sc: Set default linker endianness based on
