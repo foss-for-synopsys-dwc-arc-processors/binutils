@@ -1,3 +1,138 @@
+2013-02-21  Alan Modra  <amodra@gmail.com>
+
+	* scripttempl/elf.sc (.init_array, .fini_array): Don't sort all
+	.init_array/.fini_array input sections before .ctors/.dtors input
+	sections.
+	(CTORS_IN_INIT_ARRAY, DTORS_IN_INIT_ARRAY): Adjust to suit.
+
+2013-02-21  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/elf32.em (write_build_id, setup_build_id): Adjust
+	for elf_tdata changes.
+
+2013-02-21  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/elf-generic.em: Use newly defined elf_obj_tdata
+	accessor macros.
+
+2013-02-20  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am: Use $(ELF_DEPS) on a number of eelf*.c rules.
+	* Makefile.in: Regenerate.
+
+2013-02-19  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR ld/15146
+	* plugin.c (plugin_notice): Add null check before dereferencing
+	pointer.
+
+2013-02-19  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/elf32.em (emit_note_gnu_build_id): New static var.
+	Replace all info->emit_note_gnu_build_id refs.
+	(id_note_section_size): Rename from
+	gld${EMULATION_NAME}_id_note_section_size.
+	(struct build_id_info): Delete.
+	(write_build_id): Rename from
+	gld${EMULATION_NAME}_write_build_id_section.
+	Update elf_tdata usage.  Style, formatting.
+	(setup_build_id): New function.
+	(gld${EMULATION_NAME}_after_open): Use setup_build_id.
+
+2013-02-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15146
+	* plugin.c (plugin_notice): Replace the undefined dummy bfd with
+	the real one.
+
+2013-02-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15141
+	* plugin.c (plugin_notice): Also trace symbol from the IR bfd.
+
+2013-02-15  Kai Tietz  <ktietz@redhat.com>
+
+	* scripttempl/pep.sc (.xdata): Merge .xdata* into .xdata section.
+	(.pdata): Merge .pdata* into .pdata section.
+
+2013-02-11  Alan Modra  <amodra@gmail.com>
+
+	* ldlang.c (get_init_priority): Comment typo.
+	(lang_finish): Free link_info.hash and lang_definedness_table.
+	(lang_end): Delete lang_definedness_table comment.
+
+2013-02-11  Alan Modra  <amodra@gmail.com>
+
+	PR ld/15130
+	* ld.texinfo (-rpath-link): Typo fix.
+
+2013-02-08  Markos Chandras  <markos.chandras@imgtec.com>
+
+	* emultempl/metagelf.em (build_section_lists): Use sec_info_type
+	rather than userdata->flags.just_syms.
+
+2013-02-06  Sandra Loosemore  <sandra@codesourcery.com>
+	    Andrew Jenner <andrew@codesourcery.com>
+
+	Based on patches from Altera Corporation.
+
+	* Makefile.am (enios2elf.c): New rule.
+	* Makefile.in: Regenerated.
+	* configure.tgt: Add case for nios2*-*-*.
+	* emulparams/nios2elf.sh: New file.
+	* NEWS: Note Altera Nios II support.
+
+2013-02-06  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	* emultempl/avrelf.em (avr_elf_before_parse): New function.
+	(LDEMUL_BEFORE_PARSE): Define.
+
+2013-02-06  Alan Modra  <amodra@gmail.com>
+
+	PR ld/15096
+	* emultempl/elf32.em: Revert 2013-02-04, 2013-01-22 and 2013-01-21.
+	* emultempl/alphaelf.em: Revert 2013-02-04.
+	* emultempl/cr16elf.em: Likewise.
+	* emultempl/crxelf.em: Likewise.
+	* emultempl/hppaelf.em: Likewise.
+	* emultempl/ia64elf.em: Likewise.
+	* emultempl/mipself.em: Likewise.
+	* NEWS: Revert 2013-01-21.
+
+2013-02-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15096
+	* emultempl/alphaelf.em (alpha_after_parse): Call
+	gld${EMULATION_NAME}_after_parse instead of after_parse_default.
+	* emultempl/cr16elf.em (cr16elf_after_parse): Likewise.
+	* emultempl/crxelf.em (crxelf_after_parse): Likewise.
+	* emultempl/hppaelf.em (hppaelf_after_parse): Likewise.
+	* emultempl/mipself.em (mips_after_parse): Likewise.
+
+	* emultempl/ia64elf.em (gld${EMULATION_NAME}_after_parse): Renamed
+	to ...
+	(gld_${EMULATION_NAME}_after_parse): This.  Call
+	gld${EMULATION_NAME}_after_parse instead of after_parse_default.
+	(LDEMUL_AFTER_PARSE): Set to gld_${EMULATION_NAME}_after_parse.
+
+	* emultempl/elf32.em (new_dtags_set): New variable.
+	(gld${EMULATION_NAME}_before_parse): Don't set link_info.new_dtags
+	here.
+	(gld${EMULATION_NAME}_after_parse): New function.
+	(ld_${EMULATION_NAME}_emulation): Replace after_parse_default'
+	with gld${EMULATION_NAME}_after_parse.
+	(gld${EMULATION_NAME}_handle_option): Set new_dtags_set to TRUE
+	when setting link_info.new_dtags.
+
+2013-01-25  Kai Tietz  <ktietz@redhat.com>
+
+	* deffilep.y (def_image_name): Adjust type of base-address
+	argument.
+	(%union): Add new type bfd_vma as vma.
+	(VMA):  New rule.
+	(opt_base): Use VMA instead of NUMBER rule to evaluate value.
+	(def_file_print): Use bfd's fprintf_vma to output base-address.
+
 2013-01-24  Nick Clifton  <nickc@redhat.com>
 
 	* NEWS: Mention support for V850E3V5 architecture.

@@ -1570,7 +1570,7 @@ elf32_tic6x_link_hash_table_create (bfd *abfd)
   struct elf32_tic6x_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct elf32_tic6x_link_hash_table);
 
-  ret = bfd_malloc (amt);
+  ret = bfd_zmalloc (amt);
   if (ret == NULL)
     return NULL;
 
@@ -1583,7 +1583,6 @@ elf32_tic6x_link_hash_table_create (bfd *abfd)
       return NULL;
     }
 
-  ret->sym_cache.abfd = NULL;
   ret->obfd = abfd;
   ret->elf.is_relocatable_executable = 1;
 
@@ -1613,14 +1612,6 @@ elf32_tic6x_final_link (bfd *abfd, struct bfd_link_info *info)
     return FALSE;
 
   return TRUE;
-}
-
-/* Destroy a C6X ELF linker hash table.  */
-
-static void
-elf32_tic6x_link_hash_table_free (struct bfd_link_hash_table *hash)
-{
-  _bfd_generic_link_hash_table_free (hash);
 }
 
 /* Called to pass PARAMS to the backend.  We store them in the hash table
@@ -4375,7 +4366,6 @@ elf32_tic6x_set_osabi (bfd *abfd, struct bfd_link_info *link_info)
 #define bfd_elf32_bfd_merge_private_bfd_data	elf32_tic6x_merge_private_bfd_data
 #define bfd_elf32_mkobject		elf32_tic6x_mkobject
 #define bfd_elf32_bfd_link_hash_table_create  elf32_tic6x_link_hash_table_create
-#define bfd_elf32_bfd_link_hash_table_free    elf32_tic6x_link_hash_table_free
 #define bfd_elf32_new_section_hook	elf32_tic6x_new_section_hook
 #define elf_backend_stack_align		8
 #define elf_backend_can_gc_sections	1

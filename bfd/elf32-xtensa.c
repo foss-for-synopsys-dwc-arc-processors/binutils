@@ -655,7 +655,7 @@ elf_xtensa_link_hash_table_create (bfd *abfd)
   struct elf_xtensa_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct elf_xtensa_link_hash_table);
 
-  ret = bfd_malloc (amt);
+  ret = bfd_zmalloc (amt);
   if (ret == NULL)
     return NULL;
 
@@ -667,16 +667,6 @@ elf_xtensa_link_hash_table_create (bfd *abfd)
       free (ret);
       return NULL;
     }
-
-  ret->sgot = NULL;
-  ret->sgotplt = NULL;
-  ret->srelgot = NULL;
-  ret->splt = NULL;
-  ret->srelplt = NULL;
-  ret->sgotloc = NULL;
-  ret->spltlittbl = NULL;
-
-  ret->plt_reloc_count = 0;
 
   /* Create a hash entry for "_TLS_MODULE_BASE_" to speed up checking
      for it later.  */
@@ -3792,10 +3782,10 @@ elf_xtensa_grok_prstatus (bfd *abfd, Elf_Internal_Note *note)
      based on the size.  Just assume this is GNU/Linux.  */
 
   /* pr_cursig */
-  elf_tdata (abfd)->core_signal = bfd_get_16 (abfd, note->descdata + 12);
+  elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
 
   /* pr_pid */
-  elf_tdata (abfd)->core_lwpid = bfd_get_32 (abfd, note->descdata + 24);
+  elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 24);
 
   /* pr_reg */
   offset = 72;
@@ -3816,9 +3806,9 @@ elf_xtensa_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
 	return FALSE;
 
       case 128:		/* GNU/Linux elf_prpsinfo */
-	elf_tdata (abfd)->core_program
+	elf_tdata (abfd)->core->program
 	 = _bfd_elfcore_strndup (abfd, note->descdata + 32, 16);
-	elf_tdata (abfd)->core_command
+	elf_tdata (abfd)->core->command
 	 = _bfd_elfcore_strndup (abfd, note->descdata + 48, 80);
     }
 
@@ -3827,7 +3817,7 @@ elf_xtensa_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
      implementations, so strip it off if it exists.  */
 
   {
-    char *command = elf_tdata (abfd)->core_command;
+    char *command = elf_tdata (abfd)->core->command;
     int n = strlen (command);
 
     if (0 < n && command[n - 1] == ' ')

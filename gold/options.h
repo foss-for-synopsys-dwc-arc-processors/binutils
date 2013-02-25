@@ -498,6 +498,32 @@ struct Struct_special : public Struct_var
   };									\
   Struct_no_##option__ no_##option__##_initializer_
 
+// This is like DEFINE_uint64, but VARNAME is the name of a different
+// option.  This option becomes an alias for that one.
+#define DEFINE_uint64_alias(option__, varname__, dashes__, shortname__,	\
+			    helpstring__, helparg__)			\
+ private:								\
+  struct Struct_##option__ : public options::Struct_var			\
+  {									\
+    Struct_##option__()							\
+      : option(#option__, dashes__, shortname__, "", helpstring__,	\
+	       helparg__, false, this)					\
+    { }									\
+									\
+    void								\
+    parse_to_value(const char* option_name, const char* arg,		\
+		   Command_line*, General_options* options)		\
+    {									\
+      uint64_t value;							\
+      options::parse_uint64(option_name, arg, &value);			\
+      options->set_##varname__(value);					\
+      options->set_user_set_##varname__();				\
+    }									\
+									\
+    options::One_option option;						\
+  };									\
+  Struct_##option__ option__##_;
+
 // This is used for non-standard flags.  It defines no functions; it
 // just calls General_options::parse_VARNAME whenever the flag is
 // seen.  We declare parse_VARNAME as a static member of
@@ -878,6 +904,11 @@ class General_options
   DEFINE_dirlist(library_path, options::TWO_DASHES, 'L',
                  N_("Add directory to search path"), N_("DIR"));
 
+  DEFINE_bool(text_reorder, options::TWO_DASHES, '\0', true,
+	      N_("Enable text section reordering for GCC section names "
+		 "(default)"),
+	      N_("Disable text section reordering for GCC section names"));
+
   DEFINE_bool(nostdlib, options::ONE_DASH, '\0', false,
               N_(" Only search directories specified on the command line."),
               NULL);
@@ -1108,6 +1139,9 @@ class General_options
                 N_("Set the address of the data segment"), N_("ADDRESS"));
   DEFINE_uint64(Ttext, options::ONE_DASH, '\0', -1U,
                 N_("Set the address of the text segment"), N_("ADDRESS"));
+  DEFINE_uint64_alias(Ttext_segment, Ttext, options::ONE_DASH, '\0',
+		      N_("Set the address of the text segment"),
+		      N_("ADDRESS"));
 
   DEFINE_bool(toc_optimize, options::TWO_DASHES, '\0', true,
 	      N_("(PowerPC64 only) Optimize TOC code sequences"),

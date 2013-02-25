@@ -1027,7 +1027,7 @@ elf_metag_link_hash_table_create (bfd *abfd)
   struct elf_metag_link_hash_table *htab;
   bfd_size_type amt = sizeof (*htab);
 
-  htab = bfd_malloc (amt);
+  htab = bfd_zmalloc (amt);
   if (htab == NULL)
     return NULL;
 
@@ -1045,20 +1045,6 @@ elf_metag_link_hash_table_create (bfd *abfd)
 			    sizeof (struct elf_metag_stub_hash_entry)))
     return NULL;
 
-  htab->stub_bfd = NULL;
-  htab->add_stub_section = NULL;
-  htab->layout_sections_again = NULL;
-  htab->stub_group = NULL;
-  htab->sgot = NULL;
-  htab->sgotplt = NULL;
-  htab->srelgot = NULL;
-  htab->splt = NULL;
-  htab->srelplt = NULL;
-  htab->sdynbss = NULL;
-  htab->srelbss = NULL;
-  htab->sym_cache.abfd = NULL;
-  htab->tls_ldm_got.refcount = 0;
-
   return &htab->etab.root;
 }
 
@@ -1071,7 +1057,7 @@ elf_metag_link_hash_table_free (struct bfd_link_hash_table *btab)
     = (struct elf_metag_link_hash_table *) btab;
 
   bfd_hash_table_free (&htab->bstab);
-  _bfd_generic_link_hash_table_free (btab);
+  _bfd_elf_link_hash_table_free (btab);
 }
 
 /* Section name for stubs is the associated section name plus this
@@ -2051,7 +2037,7 @@ elf_metag_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
   if (! _bfd_elf_create_dynamic_sections (abfd, info))
     return FALSE;
 
-  htab->sgot = bfd_get_section_by_name (abfd, ".got");
+  htab->sgot = bfd_get_linker_section (abfd, ".got");
   if (! htab->sgot)
     return FALSE;
 
@@ -2083,13 +2069,13 @@ elf_metag_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
 
   elf_hash_table (info)->hgot = eh;
 
-  htab->splt = bfd_get_section_by_name (abfd, ".plt");
-  htab->srelplt = bfd_get_section_by_name (abfd, ".rela.plt");
+  htab->splt = bfd_get_linker_section (abfd, ".plt");
+  htab->srelplt = bfd_get_linker_section (abfd, ".rela.plt");
 
-  htab->srelgot = bfd_get_section_by_name (abfd, ".rela.got");
+  htab->srelgot = bfd_get_linker_section (abfd, ".rela.got");
 
-  htab->sdynbss = bfd_get_section_by_name (abfd, ".dynbss");
-  htab->srelbss = bfd_get_section_by_name (abfd, ".rela.bss");
+  htab->sdynbss = bfd_get_linker_section (abfd, ".dynbss");
+  htab->srelbss = bfd_get_linker_section (abfd, ".rela.bss");
 
   return TRUE;
 }
@@ -2570,13 +2556,6 @@ elf_metag_adjust_dynamic_symbol (struct bfd_link_info *info,
       return TRUE;
     }
 
-  if (eh->size == 0)
-    {
-      (*_bfd_error_handler) (_("dynamic variable `%s' is zero size"),
-			     hh->eh.root.root.string);
-      return TRUE;
-    }
-
   /* We must allocate the symbol in our .dynbss section, which will
      become part of the .bss section of the executable.  There will be
      an entry for this symbol in the .dynsym section.  The dynamic
@@ -2592,7 +2571,7 @@ elf_metag_adjust_dynamic_symbol (struct bfd_link_info *info,
   /* We must generate a COPY reloc to tell the dynamic linker to
      copy the initial value out of the dynamic object and into the
      runtime process image.  */
-  if ((eh->root.u.def.section->flags & SEC_ALLOC) != 0)
+  if ((eh->root.u.def.section->flags & SEC_ALLOC) != 0 && eh->size != 0)
     {
       htab->srelbss->size += sizeof (Elf32_External_Rela);
       eh->needs_copy = 1;
@@ -2854,7 +2833,7 @@ elf_metag_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
       /* Set the contents of the .interp section to the interpreter.  */
       if (info->executable)
 	{
-	  s = bfd_get_section_by_name (dynobj, ".interp");
+	  s = bfd_get_linker_section (dynobj, ".interp");
 	  if (s == NULL)
 	    abort ();
 	  s->size = sizeof ELF_DYNAMIC_INTERPRETER;
@@ -3306,7 +3285,7 @@ elf_metag_finish_dynamic_sections (bfd *output_bfd,
   htab = metag_link_hash_table (info);
   dynobj = htab->etab.dynobj;
 
-  sdyn = bfd_get_section_by_name (dynobj, ".dynamic");
+  sdyn = bfd_get_linker_section (dynobj, ".dynamic");
 
   if (htab->etab.dynamic_sections_created)
     {

@@ -1,3 +1,113 @@
+2013-02-25  Terry Guo  <terry.guo@arm.com>
+
+	* config/tc-arm.c (arm_cpus): Add cortex-r7 entry.
+	* doc/c-arm.texi: Add cortex-r7 and missing cortex-r5 to
+	list of accepted CPUs.
+
+2013-02-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/15159
+	* config/tc-i386.c (cpu_arch): Add ".smap".
+
+	* doc/c-i386.texi: Document smap.
+
+2013-02-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* config/tc-mips.c (s_cpload): Call mips_mark_labels and set
+	mips_assembling_insn appropriately.
+	(s_cpsetup, s_cprestore, s_cpreturn, s_cpadd): Likewise.
+
+2013-02-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* config/tc-mips.c (append_insn): Correct indentation, remove
+	extraneous braces.
+
+2013-02-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/tc-arm.c (do_neon_mov): Break on NS_NULL.
+
+2013-02-15  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* configure.tgt: Add nios2-*-rtems*.
+
+2013-02-14  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* config/tc-aarch64.c (md_begin): Change to check if 'name' is
+	NULL.
+
+2013-02-09  Jürgen Urban  <JuergenUrban@gmx.de>
+
+	* config/tc-mips.c (CPU_HAS_LDC1_SDC1): New macro.
+	(macro): Use it.  Assert that trunc.w.s is not used for r5900.
+
+2013-02-08  Yi-Hsiu, Hsu  <ahsu@marvell.com>
+
+	* gas/config/tc-arm.c (arm_cpus): Add support for mcpu=marvell-pj4
+	core.
+
+2013-02-06  Sandra Loosemore  <sandra@codesourcery.com>
+	    Andrew Jenner <andrew@codesourcery.com>
+
+	Based on patches from Altera Corporation.
+
+	* Makefile.am (TARGET_CPU_CFILES): Add config/tc-nios2.c.
+	(TARGET_CPU_HFILES): Add config/tc-nios2.h.
+	* Makefile.in: Regenerated.
+	* configure.tgt: Add case for nios2*-linux*.
+	* config/obj-elf.c: Conditionally include elf/nios2.h.
+	* config/tc-nios2.c: New file.
+	* config/tc-nios2.h: New file.
+	* doc/Makefile.am (CPU_DOCS): Add c-nios2.texi.
+	* doc/Makefile.in: Regenerated.
+	* doc/all.texi: Set NIOSII.
+	* doc/as.texinfo (Overview): Add Nios II options.
+	(Machine Dependencies): Include c-nios2.texi.
+	* doc/c-nios2.texi: New file.
+	* NEWS: Note Altera Nios II support.
+
+2013-02-06  Alan Modra  <amodra@gmail.com>
+
+	PR gas/14255
+	* config/tc-avr.h (TC_VALIDATE_FIX): Mark symbol used by reloc.
+	Don't skip fixups with fx_subsy non-NULL.
+	* config/tc-avr.c (tc_gen_reloc): Don't specially handle fixups
+	with fx_subsy non-NULL.
+
+2013-02-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* doc/c-metag.texi: Add "@c man" markers.
+
+2013-02-04  Alan Modra  <amodra@gmail.com>
+
+	* write.c (fixup_segment): Return void.  Delete seg_reloc_count
+	related code.
+	(TC_ADJUST_RELOC_COUNT): Delete.
+	* config/tc-i960.h (TC_ADJUST_RELOC_COUNT): Delete.
+
+2013-02-04  Alan Modra  <amodra@gmail.com>
+
+	* po/POTFILES.in: Regenerate.
+
+2013-01-30  Markos Chandras  <markos.chandras@imgtec.com>
+
+	* config/tc-metag.c: Make SWAP instruction less permissive with
+	its operands.
+
+2013-01-29  DJ Delorie  <dj@redhat.com>
+
+	* config/tc-rl78.c (rl78_cons_fix_new): Handle user-specified
+	relocs in .word/.etc statements.
+
+2013-01-29  Roland McGrath  <mcgrathr@google.com>
+
+	* config/tc-arm.c (md_apply_fix): Use as_bad_where for "bad
+	immediate value for 8-bit offset" error so it shows line info.
+
+2013-01-24  Joseph Myers  <joseph@codesourcery.com>
+
+	* config/tc-ppc.c (md_assemble): Do not generate APUinfo sections
+	for 64-bit output.
+
 2013-01-24  Nick Clifton  <nickc@redhat.com>
 
 	* config/tc-v850.c: Add support for e3v5 architecture.

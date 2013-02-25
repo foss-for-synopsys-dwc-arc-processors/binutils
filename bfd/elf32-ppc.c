@@ -37,6 +37,7 @@
 #include "elf32-ppc.h"
 #include "elf-vxworks.h"
 #include "dwarf2.h"
+#include "elf-linux-psinfo.h"
 
 typedef enum split16_format_type
 {
@@ -1777,6 +1778,58 @@ static reloc_howto_type ppc_elf_howto_raw[] = {
 	 0xffff,		/* dst_mask */
 	 FALSE),		/* pcrel_offset */
 };
+
+/* External 32-bit PPC structure for PRPSINFO.  This structure is
+   ABI-defined, thus we choose to use char arrays here in order to
+   avoid dealing with different types in different architectures.
+
+   The PPC 32-bit structure uses int for `pr_uid' and `pr_gid' while
+   most non-PPC architectures use `short int'.
+
+   This structure will ultimately be written in the corefile's note
+   section, as the PRPSINFO.  */
+
+struct elf_external_ppc_linux_prpsinfo32
+  {
+    char pr_state;			/* Numeric process state.  */
+    char pr_sname;			/* Char for pr_state.  */
+    char pr_zomb;			/* Zombie.  */
+    char pr_nice;			/* Nice val.  */
+    char pr_flag[4];			/* Flags.  */
+    char pr_uid[4];
+    char pr_gid[4];
+    char pr_pid[4];
+    char pr_ppid[4];
+    char pr_pgrp[4];
+    char pr_sid[4];
+    char pr_fname[16];			/* Filename of executable.  */
+    char pr_psargs[80];			/* Initial part of arg list.  */
+  };
+
+/* Helper macro to swap (properly handling endianess) things from the
+   `elf_internal_prpsinfo' structure to the `elf_external_ppc_prpsinfo32'
+   structure.
+
+   Note that FROM should be a pointer, and TO should be the explicit type.  */
+
+#define PPC_LINUX_PRPSINFO32_SWAP_FIELDS(abfd, from, to)	      \
+  do								      \
+    {								      \
+      H_PUT_8 (abfd, from->pr_state, &to.pr_state);		      \
+      H_PUT_8 (abfd, from->pr_sname, &to.pr_sname);		      \
+      H_PUT_8 (abfd, from->pr_zomb, &to.pr_zomb);		      \
+      H_PUT_8 (abfd, from->pr_nice, &to.pr_nice);		      \
+      H_PUT_32 (abfd, from->pr_flag, to.pr_flag);		      \
+      H_PUT_32 (abfd, from->pr_uid, to.pr_uid);			      \
+      H_PUT_32 (abfd, from->pr_gid, to.pr_gid);			      \
+      H_PUT_32 (abfd, from->pr_pid, to.pr_pid);			      \
+      H_PUT_32 (abfd, from->pr_ppid, to.pr_ppid);		      \
+      H_PUT_32 (abfd, from->pr_pgrp, to.pr_pgrp);		      \
+      H_PUT_32 (abfd, from->pr_sid, to.pr_sid);			      \
+      strncpy (to.pr_fname, from->pr_fname, sizeof (to.pr_fname));    \
+      strncpy (to.pr_psargs, from->pr_psargs, sizeof (to.pr_psargs)); \
+    } while (0)
+
 
 /* Initialize the ppc_elf_howto_table, so that linear accesses can be done.  */
 
@@ -2163,10 +2216,10 @@ ppc_elf_grok_prstatus (bfd *abfd, Elf_Internal_Note *note)
 
     case 268:		/* Linux/PPC.  */
       /* pr_cursig */
-      elf_tdata (abfd)->core_signal = bfd_get_16 (abfd, note->descdata + 12);
+      elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
 
       /* pr_pid */
-      elf_tdata (abfd)->core_lwpid = bfd_get_32 (abfd, note->descdata + 24);
+      elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 24);
 
       /* pr_reg */
       offset = 72;
@@ -2189,11 +2242,11 @@ ppc_elf_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
       return FALSE;
 
     case 128:		/* Linux/PPC elf_prpsinfo.  */
-      elf_tdata (abfd)->core_pid
+      elf_tdata (abfd)->core->pid
 	= bfd_get_32 (abfd, note->descdata + 16);
-      elf_tdata (abfd)->core_program
+      elf_tdata (abfd)->core->program
 	= _bfd_elfcore_strndup (abfd, note->descdata + 32, 16);
-      elf_tdata (abfd)->core_command
+      elf_tdata (abfd)->core->command
 	= _bfd_elfcore_strndup (abfd, note->descdata + 48, 80);
     }
 
@@ -2202,7 +2255,7 @@ ppc_elf_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
      implementations, so strip it off if it exists.  */
 
   {
-    char *command = elf_tdata (abfd)->core_command;
+    char *command = elf_tdata (abfd)->core->command;
     int n = strlen (command);
 
     if (0 < n && command[n - 1] == ' ')
@@ -2210,6 +2263,19 @@ ppc_elf_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
   }
 
   return TRUE;
+}
+
+char *
+elfcore_write_ppc_linux_prpsinfo32 (bfd *abfd, char *buf, int *bufsiz,
+				      const struct elf_internal_linux_prpsinfo *prpsinfo)
+{
+  struct elf_external_ppc_linux_prpsinfo32 data;
+
+  memset (&data, 0, sizeof (data));
+  PPC_LINUX_PRPSINFO32_SWAP_FIELDS (abfd, prpsinfo, data);
+
+  return elfcore_write_note (abfd, buf, bufsiz,
+			     "CORE", NT_PRPSINFO, &data, sizeof (data));
 }
 
 static char *
@@ -2370,7 +2436,7 @@ ppc_elf_modify_segment_map (bfd *abfd,
      If we find that case, we split the segment.
      We maintain the original output section order.  */
 
-  for (m = elf_tdata (abfd)->segment_map; m != NULL; m = m->next)
+  for (m = elf_seg_map (abfd); m != NULL; m = m->next)
     {
       if (m->count == 0)
 	continue;

@@ -3979,9 +3979,22 @@ bfd_mach_o_scan_start_address (bfd *abfd)
         cmd = &mdata->commands[i].command.thread;
         break;
       }
+    else if (mdata->commands[i].type == BFD_MACH_O_LC_MAIN
+	     && mdata->nsects > 1)
+      {
+	bfd_mach_o_main_command *main_cmd = &mdata->commands[i].command.main;
+	bfd_mach_o_section *text_sect = mdata->sections[0];
+	if (text_sect)
+	  {
+	    abfd->start_address = main_cmd->entryoff
+	      + (text_sect->addr - text_sect->offset);
+	    return TRUE;
+	  }
+      }
 
+  /* An object file has no start address, so do not fail if not found.  */
   if (cmd == NULL)
-    return FALSE;
+    return TRUE;
 
   /* FIXME: create a subtarget hook ?  */
   for (i = 0; i < cmd->nflavours; i++)
@@ -4121,10 +4134,11 @@ bfd_mach_o_scan (bfd *abfd,
 	}
     }
 
-  if (bfd_mach_o_scan_start_address (abfd) < 0)
+  /* Sections should be flatten before scanning start address.  */
+  bfd_mach_o_flatten_sections (abfd);
+  if (!bfd_mach_o_scan_start_address (abfd))
     return FALSE;
 
-  bfd_mach_o_flatten_sections (abfd);
   return TRUE;
 }
 
@@ -4177,10 +4191,9 @@ bfd_mach_o_header_p (bfd *abfd,
                      bfd_mach_o_filetype filetype,
                      bfd_mach_o_cpu_type cputype)
 {
-  struct bfd_preserve preserve;
   bfd_mach_o_header header;
+  bfd_mach_o_data_struct *mdata;
 
-  preserve.marker = NULL;
   if (!bfd_mach_o_read_header (abfd, &header))
     goto wrong;
 
@@ -4226,24 +4239,19 @@ bfd_mach_o_header_p (bfd *abfd,
         }
     }
 
-  preserve.marker = bfd_zalloc (abfd, sizeof (bfd_mach_o_data_struct));
-  if (preserve.marker == NULL
-      || !bfd_preserve_save (abfd, &preserve))
+  mdata = (bfd_mach_o_data_struct *) bfd_zalloc (abfd, sizeof (*mdata));
+  if (mdata == NULL)
     goto fail;
 
-  if (!bfd_mach_o_scan (abfd, &header,
-                        (bfd_mach_o_data_struct *) preserve.marker))
+  if (!bfd_mach_o_scan (abfd, &header, mdata))
     goto wrong;
 
-  bfd_preserve_finish (abfd, &preserve);
   return abfd->xvec;
 
  wrong:
   bfd_set_error (bfd_error_wrong_format);
 
  fail:
-  if (preserve.marker != NULL)
-    bfd_preserve_restore (abfd, &preserve);
   return NULL;
 }
 

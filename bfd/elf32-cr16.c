@@ -1660,7 +1660,7 @@ elf32_cr16_link_hash_table_create (bfd *abfd)
   struct elf_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct elf_link_hash_table);
 
-  ret = (struct elf_link_hash_table *) bfd_malloc (amt);
+  ret = (struct elf_link_hash_table *) bfd_zmalloc (amt);
   if (ret == (struct elf_link_hash_table *) NULL)
     return NULL;
 
@@ -1674,18 +1674,6 @@ elf32_cr16_link_hash_table_create (bfd *abfd)
     }
 
   return &ret->root;
-}
-
-/* Free an cr16 ELF linker hash table.  */
-
-static void
-elf32_cr16_link_hash_table_free (struct bfd_link_hash_table *hash)
-{
-  struct elf_link_hash_table *ret
-    = (struct elf_link_hash_table *) hash;
-
-  _bfd_generic_link_hash_table_free
-    ((struct bfd_link_hash_table *) ret);
 }
 
 static unsigned long
@@ -2973,8 +2961,6 @@ _bfd_cr16_elf_reloc_type_class (const Elf_Internal_Rela *rela)
 
 #define bfd_elf32_bfd_link_hash_table_create \
                                   elf32_cr16_link_hash_table_create
-#define bfd_elf32_bfd_link_hash_table_free \
-                                  elf32_cr16_link_hash_table_free
 
 #define elf_backend_create_dynamic_sections \
                                   _bfd_cr16_elf_create_dynamic_sections

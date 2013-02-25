@@ -786,7 +786,7 @@ elf_s390_link_hash_table_create (bfd *abfd)
   struct elf_s390_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct elf_s390_link_hash_table);
 
-  ret = (struct elf_s390_link_hash_table *) bfd_malloc (amt);
+  ret = (struct elf_s390_link_hash_table *) bfd_zmalloc (amt);
   if (ret == NULL)
     return NULL;
 
@@ -797,16 +797,6 @@ elf_s390_link_hash_table_create (bfd *abfd)
       free (ret);
       return NULL;
     }
-
-  ret->elf.sgot = NULL;
-  ret->elf.sgotplt = NULL;
-  ret->elf.srelgot = NULL;
-  ret->elf.splt = NULL;
-  ret->elf.srelplt = NULL;
-  ret->sdynbss = NULL;
-  ret->srelbss = NULL;
-  ret->tls_ldm_got.refcount = 0;
-  ret->sym_cache.abfd = NULL;
 
   return &ret->elf.root;
 }
@@ -3879,10 +3869,10 @@ elf_s390_grok_prstatus (bfd * abfd, Elf_Internal_Note * note)
 
       case 224:		/* S/390 Linux.  */
 	/* pr_cursig */
-	elf_tdata (abfd)->core_signal = bfd_get_16 (abfd, note->descdata + 12);
+	elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
 
 	/* pr_pid */
-	elf_tdata (abfd)->core_lwpid = bfd_get_32 (abfd, note->descdata + 24);
+	elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 24);
 
 	/* pr_reg */
 	offset = 72;

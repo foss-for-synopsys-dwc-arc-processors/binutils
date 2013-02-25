@@ -1,3 +1,252 @@
+013-02-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15167
+	* ld-unique/unique.exp: Add a test for shared library with
+	reference.
+
+2013-02-19  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* lib/ld-lib.exp (run_ld_link_tests): Add another argument, pass
+	its contents to ar_simple_create and ld_simple_link after
+	objfiles.
+	* ld-aarch64/aarch64-elf.exp: Adjust accordingly.
+	* ld-alpha/alpha.exp: Likewise.
+	* ld-arm/arm-elf.exp: Likewise.
+	* ld-arm/export-class.exp: Likewise.
+	* ld-elf/comm-data.exp: Likewise.
+	* ld-elf/eh-group.exp: Likewise.
+	* ld-elf/elf.exp: Likewise.
+	* ld-elf/export-class.exp: Likewise.
+	* ld-elfvers/vers.exp: Likewise.
+	* ld-frv/tls.exp: Likewise.
+	* ld-i386/export-class.exp: Likewise.
+	* ld-i386/i386.exp: Likewise.
+	* ld-ia64/ia64.exp: Likewise.
+	* ld-libs/libs.exp: Likewise.
+	* ld-m68k/m68k.exp: Likewise.
+	* ld-metag/metag.exp: Likewise.
+	* ld-mips-elf/comm-data.exp: Likewise.
+	* ld-mips-elf/export-class.exp: Likewise.
+	* ld-mips-elf/mips-elf.exp: Likewise.
+	* ld-mn10300/mn10300.exp: Likewise.
+	* ld-pe/pe-compile.exp: Likewise.
+	* ld-pe/pe.exp: Likewise.
+	* ld-plugin/plugin.exp: Likewise.
+	* ld-powerpc/aix52.exp: Likewise.
+	* ld-powerpc/export-class.exp: Likewise.
+	* ld-powerpc/powerpc.exp: Likewise.
+	* ld-s390/s390.exp: Likewise.
+	* ld-sh/sh-vxworks.exp: Likewise.
+	* ld-sh/sh64/sh64.exp: Likewise.
+	* ld-sparc/sparc.exp: Likewise.
+	* ld-tic6x/tic6x.exp: Likewise.
+	* ld-tilegx/tilegx.exp: Likewise.
+	* ld-tilepro/tilepro.exp: Likewise.
+	* ld-undefined/entry.exp: Likewise.
+	* ld-vax-elf/vax-elf.exp: Likewise.
+	* ld-x86-64/dwarfreloc.exp: Likewise.
+	* ld-x86-64/export-class.exp: Likewise.
+	* ld-x86-64/x86-64.exp: Likewise.
+	* ld-xc16x/xc16x.exp: Likewise.
+	* ld-xstormy16/xstormy16.exp: Likewise.
+	* ld-xtensa/xtensa.exp: Likewise.
+
+2013-02-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+        * ld-mips-elf/jalx-2.ld: Include .rel.plt in output, give .plt a
+	mapping.
+        * ld-mips-elf/jalx-2.dd: Adjust disassembly accordingly.
+
+2013-02-18  Alan Modra  <amodra@gmail.com>
+
+	* ld-plugin/lto.exp (Build pr15146b.so) Add -Wl,--no-as-needed.
+	(PR ld/15146 (1), (2)): Likewise.
+	(LTO 7): Likewise.
+
+2013-02-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15146
+	* ld-plugin/pr15146.d: New file.
+	* ld-plugin/pr15146a.c: Likewise.
+	* ld-plugin/pr15146b.c: Likewise.
+	* ld-plugin/pr15146c.c: Likewise.
+	* ld-plugin/pr15146d.c: Likewise.
+
+	* ld-plugin/lto.exp: Add tests for PR ld/15146.
+
+2013-02-15  Markos Chandras  <markos.chandras@imgtec.com>
+
+	* ld-metag/pcrel.d: Fix the expected disassembler
+	output to be in little endian format
+	* ld-metag/shared.d: likewise
+	* ld-metag/stub.d: likewise
+	* ld-metag/stub_pic_app.d: likewise
+	* ld-metag/stub_pic_shared.d: likewise
+	* ld-metag/stub_shared.d: likewise
+
+2013-02-13  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* ld-mips-elf/mips16-pic-2.dd,
+	ld-mips-elf/mips16-pic-2.gd: Remove 3 unused local GOT entries.
+	* ld-mips-elf/got-page-4a.s, ld-mips-elf/got-page-4b.s,
+	ld-mips-elf/got-page-4a.d, ld-mips-elf/got-page-4a.got,
+	ld-mips-elf/got-page-4b.d, ld-mips-elf/got-page-4b.got,
+	ld-mips-elf/got-page-5.s, ld-mips-elf/got-page-5.d,
+	ld-mips-elf/got-page-5.got, ld-mips-elf/got-page-6.s,
+	ld-mips-elf/got-page-6.d, ld-mips-elf/got-page-6.got,
+	ld-mips-elf/got-page-7a.s, ld-mips-elf/got-page-7b.s,
+	ld-mips-elf/got-page-7c.s, ld-mips-elf/got-page-7d.s,
+	ld-mips-elf/got-page-7e.s, ld-mips-elf/got-page-7.d,
+	ld-mips-elf/got-page-7.got: New tests.
+	* ld-mips-elf/mips-elf.exp: Run them.
+
+2013-02-11  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* ld-mips-elf/tlsdyn-o32-1.d, ld-mips-elf/tlsdyn-o32-1.got,
+	ld-mips-elf/tlsdyn-o32-2.d, ld-mips-elf/tlsdyn-o32-2.got,
+	ld-mips-elf/tlsdyn-o32-3.d, ld-mips-elf/tlsdyn-o32-3.got,
+	ld-mips-elf/tls-hidden3.d, ld-mips-elf/tls-hidden3.got: Update
+	for new hash table order.
+
+2013-02-11  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* ld-mips-elf/tls-hidden4.got, ld-mips-elf/tls-multi-got-1.d,
+	ld-mips-elf/tls-multi-got-1.got: Update for changes in the order
+	that symbols are added to per-bfd GOTs.
+
+2013-02-11  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* ld-mips-elf/tls-hidden3.d, ld-mips-elf/tls-hidden3.got,
+	ld-mips-elf/tls-multi-got-1.got, ld-mips-elf/tlsbin-o32.d,
+	ld-mips-elf/tlsbin-o32.got, ld-mips-elf/tlsdyn-o32-1.d,
+	ld-mips-elf/tlsdyn-o32-1.got, ld-mips-elf/tlsdyn-o32-2.d,
+	ld-mips-elf/tlsdyn-o32-2.got, ld-mips-elf/tlsdyn-o32-3.d,
+	ld-mips-elf/tlsdyn-o32-3.got, ld-mips-elf/tlsdyn-o32.d,
+	ld-mips-elf/tlsdyn-o32.got, ld-mips-elf/tlslib-o32.d,
+	ld-mips-elf/tlslib-o32.got, ld-mips-elf/tlslib-o32-hidden.got,
+	ld-mips-elf/tlslib-o32-ver.got: Adjust GOT layout for new
+	got_entry hash function.
+
+2013-02-11  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* ld-mips-elf/tlsdyn-o32-2.got, ld-mips-elf/tlsdyn-o32-3.got: Remove
+	unused GOT entries.
+
+2013-02-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15107
+	* ld-unique/unique_empty.s: Add reference to "b".
+
+2013-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-size/size-10.rd: Updated.
+	* ld-size/size-8.rd: Likewise.
+	* ld-size/size32-2-i386.d: Likewise.
+	* ld-size/size32-2-x32.d: Likewise.
+	* ld-size/size32-2-x86-64.d: Likewise.
+	* ld-size/size64-2-x32.d: Likewise.
+	* ld-size/size64-2-x86-64.d: Likewise.
+
+	* ld-size/size.exp (run_time_tests): Pass --hash-styl=gnu to
+	linker for size-8 test.
+
+2013-02-06  Sandra Loosemore  <sandra@codesourcery.com>
+	    Andrew Jenner <andrew@codesourcery.com>
+
+	Based on patches from Altera Corporation.
+
+	* ld-nios2/emit-relocs-1a.s: New.
+	* ld-nios2/emit-relocs-1b.s: New.
+	* ld-nios2/emit-relocs-1.d: New.
+	* ld-nios2/emit-relocs-1.ld: New.
+	* ld-nios2/gprel.d: New.
+	* ld-nios2/gprel.s: New.
+	* ld-nios2/hilo16.d: New.
+	* ld-nios2/hilo16.s: New.
+	* ld-nios2/hilo16_symbol.s: New.
+	* ld-nios2/imm5.d: New.
+	* ld-nios2/imm5.s: New.
+	* ld-nios2/imm5_symbol.s: New.
+	* ld-nios2/nios2.exp: New.
+	* ld-nios2/pcrel16.d: New.
+	* ld-nios2/pcrel16_label.s: New.
+	* ld-nios2/pcrel16.s: New.
+	* ld-nios2/relax_callr.d: New.
+	* ld-nios2/relax_callr.ld: New.
+	* ld-nios2/relax_callr.s: New.
+	* ld-nios2/relax_cjmp.d: New.
+	* ld-nios2/relax_cjmp.s: New.
+	* ld-nios2/relax_jmp.ld: New.
+	* ld-nios2/relax_section.d: New.
+	* ld-nios2/relax_section.s: New.
+	* ld-nios2/relax_ujmp.d: New.
+	* ld-nios2/relax_ujmp.s: New.
+	* ld-nios2/reloc.d: New.
+	* ld-nios2/reloc.s: New.
+	* ld-nios2/reloc_symbol.s: New.
+	* ld-nios2/s16.d: New.
+	* ld-nios2/s16.s: New.
+	* ld-nios2/s16_symbol.s: New.
+	* ld-nios2/u16.d: New.
+	* ld-nios2/u16.s: New.
+	* ld-nios2/u16_symbol.s: New.
+	* ld-elf/indirect.exp: Skip on targets that don't support
+	-shared -fPIC.
+	* ld-elfcomm/elfcomm.exp: Build with -G0 for nios2.
+	* ld-plugin/lto.exp: Skip shared library tests on targets that
+	don't support them.  Skip execution tests on non-native targets.
+
+2013-02-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-elf/now-1.d: New file.
+	* ld-elf/now-2.d: Likewise.
+	* ld-elf/now-3.d: Likewise.
+	* ld-elf/now-4.d: Likewise.
+	* ld-elf/rpath-1.d: Likewise.
+	* ld-elf/rpath-2.d: Likewise.
+	* ld-elf/runpath-1.d: Likewise.
+	* ld-elf/runpath-2.d: Likewise.
+
+2013-02-06  Alan Modra  <amodra@gmail.com>
+
+	PR ld/15096
+	* ld-elf/new-dtags-1.d: Delete.
+	* ld-elf/new-dtags-2.d: Likewise.
+	* ld-elf/new-dtags-3.d: Likewise.
+	* ld-elf/new-dtags-4.d: Likewise.
+	* ld-elf/new-dtags-5.d: Likewise.
+	* ld-elf/new-dtags-6.d: Likewise.
+	* ld-elf/new-dtags-7.d: Likewise.
+	* ld-elf/new-dtags-8.d: Likewise.
+
+2013-02-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/15096
+	* ld-elf/new-dtags-1.d: New test.
+	* ld-elf/new-dtags-2.d: Likewise.
+	* ld-elf/new-dtags-3.d: Likewise.
+	* ld-elf/new-dtags-4.d: Likewise.
+	* ld-elf/new-dtags-5.d: Likewise.
+	* ld-elf/new-dtags-6.d: Likewise.
+	* ld-elf/new-dtags-7.d: Likewise.
+	* ld-elf/new-dtags-8.d: Likewise.
+
+2013-01-31  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/tlsexe.d: Update for changed stub names.
+	* ld-powerpc/tlsexe.r: Likewise.
+	* ld-powerpc/tlsexetoc.d: Likewise.
+	* ld-powerpc/tlsexetoc.r: Likewise.
+	* ld-powerpc/tlsso.d: Likewise.
+	* ld-powerpc/tlsso.r: Likewise.
+	* ld-powerpc/tlstocso.d: Likewise.
+	* ld-powerpc/tlstocso.r: Likewise.
+
+2013-01-31  Hans-Peter Nilsson  <hp@axis.com>
+
+	* ld-cris/libdso-13.d: Adjust for --enable-new-dtags now
+	default for *-*-linux-* by passing explicitly for all targets.
+
 2013-01-21  Alan Modra  <amodra@gmail.com>
 
 	* ld-size/size.exp (build_tests <size-7, size-8>): Pass

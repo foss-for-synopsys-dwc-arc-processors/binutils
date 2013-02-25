@@ -1945,10 +1945,10 @@ elf32_arm_nabi_grok_prstatus (bfd *abfd, Elf_Internal_Note *note)
 
       case 148:		/* Linux/ARM 32-bit.  */
 	/* pr_cursig */
-	elf_tdata (abfd)->core_signal = bfd_get_16 (abfd, note->descdata + 12);
+	elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
 
 	/* pr_pid */
-	elf_tdata (abfd)->core_lwpid = bfd_get_32 (abfd, note->descdata + 24);
+	elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 24);
 
 	/* pr_reg */
 	offset = 72;
@@ -1971,11 +1971,11 @@ elf32_arm_nabi_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
 	return FALSE;
 
       case 124:		/* Linux/ARM elf_prpsinfo.  */
-	elf_tdata (abfd)->core_pid
+	elf_tdata (abfd)->core->pid
 	 = bfd_get_32 (abfd, note->descdata + 12);
-	elf_tdata (abfd)->core_program
+	elf_tdata (abfd)->core->program
 	 = _bfd_elfcore_strndup (abfd, note->descdata + 28, 16);
-	elf_tdata (abfd)->core_command
+	elf_tdata (abfd)->core->command
 	 = _bfd_elfcore_strndup (abfd, note->descdata + 44, 80);
     }
 
@@ -1983,7 +1983,7 @@ elf32_arm_nabi_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
      onto the end of the args in some (at least one anyway)
      implementations, so strip it off if it exists.  */
   {
-    char *command = elf_tdata (abfd)->core_command;
+    char *command = elf_tdata (abfd)->core->command;
     int n = strlen (command);
 
     if (0 < n && command[n - 1] == ' ')
@@ -3417,7 +3417,7 @@ elf32_arm_link_hash_table_create (bfd *abfd)
   struct elf32_arm_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct elf32_arm_link_hash_table);
 
-  ret = (struct elf32_arm_link_hash_table *) bfd_malloc (amt);
+  ret = (struct elf32_arm_link_hash_table *) bfd_zmalloc (amt);
   if (ret == NULL)
     return NULL;
 
@@ -3430,27 +3430,7 @@ elf32_arm_link_hash_table_create (bfd *abfd)
       return NULL;
     }
 
-  ret->sdynbss = NULL;
-  ret->srelbss = NULL;
-  ret->srelplt2 = NULL;
-  ret->dt_tlsdesc_plt = 0;
-  ret->dt_tlsdesc_got = 0;
-  ret->tls_trampoline = 0;
-  ret->next_tls_desc_index = 0;
-  ret->num_tls_desc = 0;
-  ret->thumb_glue_size = 0;
-  ret->arm_glue_size = 0;
-  ret->bx_glue_size = 0;
-  memset (ret->bx_glue_offset, 0, sizeof (ret->bx_glue_offset));
   ret->vfp11_fix = BFD_ARM_VFP11_FIX_NONE;
-  ret->vfp11_erratum_glue_size = 0;
-  ret->num_vfp11_fixes = 0;
-  ret->fix_cortex_a8 = 0;
-  ret->fix_arm1176 = 0;
-  ret->bfd_of_glue_owner = NULL;
-  ret->byteswap_code = 0;
-  ret->target1_is_rel = 0;
-  ret->target2_reloc = R_ARM_NONE;
 #ifdef FOUR_WORD_PLT
   ret->plt_header_size = 16;
   ret->plt_entry_size = 16;
@@ -3458,23 +3438,8 @@ elf32_arm_link_hash_table_create (bfd *abfd)
   ret->plt_header_size = 20;
   ret->plt_entry_size = 12;
 #endif
-  ret->fix_v4bx = 0;
-  ret->use_blx = 0;
-  ret->vxworks_p = 0;
-  ret->symbian_p = 0;
-  ret->nacl_p = 0;
   ret->use_rel = 1;
-  ret->sym_cache.abfd = NULL;
   ret->obfd = abfd;
-  ret->tls_ldm_got.refcount = 0;
-  ret->stub_bfd = NULL;
-  ret->add_stub_section = NULL;
-  ret->layout_sections_again = NULL;
-  ret->stub_group = NULL;
-  ret->top_id = 0;
-  ret->bfd_count = 0;
-  ret->top_index = 0;
-  ret->input_list = NULL;
 
   if (!bfd_hash_table_init (&ret->stub_hash_table, stub_hash_newfunc,
 			    sizeof (struct elf32_arm_stub_hash_entry)))
@@ -3495,7 +3460,7 @@ elf32_arm_hash_table_free (struct bfd_link_hash_table *hash)
     = (struct elf32_arm_link_hash_table *) hash;
 
   bfd_hash_table_free (&ret->stub_hash_table);
-  _bfd_generic_link_hash_table_free (hash);
+  _bfd_elf_link_hash_table_free (hash);
 }
 
 /* Determine if we're dealing with a Thumb only architecture.  */
@@ -8229,7 +8194,8 @@ elf32_arm_final_link_relocate (reloc_howto_type *           howto,
 			  ".tls_vars") == 0)
 	  && ((r_type != R_ARM_REL32 && r_type != R_ARM_REL32_NOI)
 	      || !SYMBOL_CALLS_LOCAL (info, h))
-	  && (!strstr (input_section->name, STUB_SUFFIX))
+	  && !(input_bfd == globals->stub_bfd
+	       && strstr (input_section->name, STUB_SUFFIX))
 	  && (h == NULL
 	      || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
 	      || h->root.type != bfd_link_hash_undefweak)
@@ -15565,7 +15531,7 @@ elf32_arm_modify_segment_map (bfd *abfd,
       /* If there is already a PT_ARM_EXIDX header, then we do not
 	 want to add another one.  This situation arises when running
 	 "strip"; the input binary already has the header.  */
-      m = elf_tdata (abfd)->segment_map;
+      m = elf_seg_map (abfd);
       while (m && m->p_type != PT_ARM_EXIDX)
 	m = m->next;
       if (!m)
@@ -15578,8 +15544,8 @@ elf32_arm_modify_segment_map (bfd *abfd,
 	  m->count = 1;
 	  m->sections[0] = sec;
 
-	  m->next = elf_tdata (abfd)->segment_map;
-	  elf_tdata (abfd)->segment_map = m;
+	  m->next = elf_seg_map (abfd);
+	  elf_seg_map (abfd) = m;
 	}
     }
 
@@ -16172,15 +16138,15 @@ elf32_arm_symbian_modify_segment_map (bfd *abfd,
   dynsec = bfd_get_section_by_name (abfd, ".dynamic");
   if (dynsec)
     {
-      for (m = elf_tdata (abfd)->segment_map; m != NULL; m = m->next)
+      for (m = elf_seg_map (abfd); m != NULL; m = m->next)
 	if (m->p_type == PT_DYNAMIC)
 	  break;
 
       if (m == NULL)
 	{
 	  m = _bfd_elf_make_dynamic_segment (abfd, dynsec);
-	  m->next = elf_tdata (abfd)->segment_map;
-	  elf_tdata (abfd)->segment_map = m;
+	  m->next = elf_seg_map (abfd);
+	  elf_seg_map (abfd) = m;
 	}
     }
 

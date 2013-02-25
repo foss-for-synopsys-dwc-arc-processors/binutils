@@ -1,3 +1,28 @@
+2013-02-19  Alan Modra  <amodra@gmail.com>
+
+	* bfdlink.h (struct bfd_link_info): Delete emit_note_gnu_build_id.
+
+2013-02-11  Sriraman Tallam  <tmsriram@google.com>
+
+	* plugin-api.h (enum ld_plugin_level): Assign integers
+	explicitly for all values.
+
+2013-02-06  Sandra Loosemore  <sandra@codesourcery.com>
+            Andrew Jenner <andrew@codesourcery.com>
+
+	Based on patches from Altera Corporation.
+
+	* dis-asm.h (print_insn_big_nios2): Declare.
+	(print_insn_little_nios2): Declare.
+
+2013-01-30  Kai Tietz  <ktietz@redhat.com>
+
+	PR other/54620
+	PR target/39064
+	* md5.h (md5_uintptr, md5_uint32): Define as uintptr_t/uint32_t if
+	stdint.h and sys/types.h headers are present.
+	* sha1.h (sha1_uintptr, sha1_uint32): Likewise.
+
 2013-01-10  Will Newton <will.newton@imgtec.com>
 
 	* dis-asm.h (print_insn_metag): New declaration.
@@ -132,8 +157,7 @@
 
 2012-08-02  Sean Keys  <skeys@ipdatasys.com>
 
-	* elf/m68hc11.h: #define E_M68HC11_NO_BANK_WARNING
-        0x000000200
+	* elf/m68hc11.h: #define E_M68HC11_NO_BANK_WARNING 0x000000200
 
 2012-07-24  Stephan McCamant  <smcc@cs.berkeley.edu>
             Dr David Alan Gilbert  <dave@treblig.org>
@@ -152,8 +176,8 @@
 
 2012-07-05  Sean Keys  <skeys@ipdatasys.com>
 
-        * opcode/xgate.h: Changed the format string for mode
-        XGATE_OP_DYA_MON.
+	* opcode/xgate.h: Changed the format string for mode
+	XGATE_OP_DYA_MON.
 
 2012-06-18  Doug Evans  <dje@google.com>
 

@@ -504,6 +504,10 @@ static int mips_32bitmode = 0;
 /* True if CPU has seq/sne and seqi/snei instructions.  */
 #define CPU_HAS_SEQ(CPU)	(CPU_IS_OCTEON (CPU))
 
+/* True, if CPU has support for ldc1 and sdc1. */
+#define CPU_HAS_LDC1_SDC1(CPU)	\
+   ((mips_opts.isa != ISA_MIPS1) && ((CPU) != CPU_R5900))
+
 /* True if mflo and mfhi can be immediately followed by instructions
    which write to the HI and LO registers.
 
@@ -4640,12 +4644,10 @@ append_insn (struct mips_cl_insn *ip, expressionS *address_expr,
     {
       unsigned int i;
 
-    mips_no_prev_insn ();
+      mips_no_prev_insn ();
 
       for (i = 0; i < ARRAY_SIZE (history); i++)
-      {
-        history[i].cleared_p = 1;
-      }
+	history[i].cleared_p = 1;
     }
 
   /* We need to emit a label at the end of branch-likely macros.  */
@@ -8927,8 +8929,7 @@ macro (struct mips_cl_insn *ip)
       s = segment_name (S_GET_SEGMENT (offset_expr.X_add_symbol));
       if (strcmp (s, ".lit8") == 0)
 	{
-	  if ((mips_opts.isa != ISA_MIPS1 || mips_opts.micromips)
-	    && (mips_opts.arch != CPU_R5900))
+	  if (CPU_HAS_LDC1_SDC1 (mips_opts.arch) || mips_opts.micromips)
 	    {
 	      macro_build (&offset_expr, "ldc1", "T,o(b)", treg,
 			   BFD_RELOC_MIPS_LITERAL, mips_gp_register);
@@ -8951,8 +8952,7 @@ macro (struct mips_cl_insn *ip)
 	      macro_build_lui (&offset_expr, AT);
 	    }
 
-	  if ((mips_opts.isa != ISA_MIPS1 || mips_opts.micromips)
-	    && (mips_opts.arch != CPU_R5900))
+	  if (CPU_HAS_LDC1_SDC1 (mips_opts.arch) || mips_opts.micromips)
 	    {
 	      macro_build (&offset_expr, "ldc1", "T,o(b)",
 			   treg, BFD_RELOC_LO16, AT);
@@ -8969,8 +8969,7 @@ macro (struct mips_cl_insn *ip)
       r = BFD_RELOC_LO16;
     dob:
       gas_assert (!mips_opts.micromips);
-      gas_assert ((mips_opts.isa == ISA_MIPS1)
-        || (mips_opts.arch == CPU_R5900));
+      gas_assert (!CPU_HAS_LDC1_SDC1 (mips_opts.arch));
       macro_build (&offset_expr, "lwc1", "T,o(b)",
 		   target_big_endian ? treg + 1 : treg, r, breg);
       /* FIXME: A possible overflow which I don't know how to deal
@@ -8982,7 +8981,7 @@ macro (struct mips_cl_insn *ip)
 
     case M_S_DOB:
       gas_assert (!mips_opts.micromips);
-      gas_assert (mips_opts.isa == ISA_MIPS1);
+      gas_assert (!CPU_HAS_LDC1_SDC1 (mips_opts.arch));
       /* Even on a big endian machine $fn comes before $fn+1.  We have
 	 to adjust when storing to memory.  */
       macro_build (&offset_expr, "swc1", "T,o(b)",
@@ -9008,7 +9007,7 @@ macro (struct mips_cl_insn *ip)
       /* Itbl support may require additional care here.  */
       coproc = 1;
       fmt = "T,o(b)";
-      if ((mips_opts.isa != ISA_MIPS1) && (mips_opts.arch != CPU_R5900))
+      if (CPU_HAS_LDC1_SDC1 (mips_opts.arch))
 	{
 	  s = "ldc1";
 	  goto ld_st;
@@ -9021,7 +9020,7 @@ macro (struct mips_cl_insn *ip)
       /* Itbl support may require additional care here.  */
       coproc = 1;
       fmt = "T,o(b)";
-      if ((mips_opts.isa != ISA_MIPS1) && (mips_opts.arch != CPU_R5900))
+      if (CPU_HAS_LDC1_SDC1 (mips_opts.arch))
 	{
 	  s = "sdc1";
 	  goto ld_st;
@@ -9922,7 +9921,7 @@ macro (struct mips_cl_insn *ip)
     case M_TRUNCWS:
     case M_TRUNCWD:
       gas_assert (!mips_opts.micromips);
-      gas_assert ((mips_opts.isa == ISA_MIPS1) || (mips_opts.arch == CPU_R5900));
+      gas_assert (mips_opts.isa == ISA_MIPS1);
       used_at = 1;
       sreg = (ip->insn_opcode >> 11) & 0x1f;	/* floating reg */
       dreg = (ip->insn_opcode >> 06) & 0x1f;	/* floating reg */
@@ -16622,6 +16621,9 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
   /* In ELF, this symbol is implicitly an STT_OBJECT symbol.  */
   symbol_get_bfdsym (ex.X_add_symbol)->flags |= BSF_OBJECT;
 
+  mips_mark_labels ();
+  mips_assembling_insn = TRUE;
+
   macro_start ();
   macro_build_lui (&ex, mips_gp_register);
   macro_build (&ex, "addiu", "t,r,j", mips_gp_register,
@@ -16631,6 +16633,7 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
 		 mips_gp_register, reg);
   macro_end ();
 
+  mips_assembling_insn = FALSE;
   demand_empty_rest_of_line ();
 }
 
@@ -16707,6 +16710,9 @@ s_cpsetup (int ignore ATTRIBUTE_UNUSED)
   SKIP_WHITESPACE ();
   expression (&ex_sym);
 
+  mips_mark_labels ();
+  mips_assembling_insn = TRUE;
+
   macro_start ();
   if (mips_cpreturn_register == -1)
     {
@@ -16754,6 +16760,7 @@ s_cpsetup (int ignore ATTRIBUTE_UNUSED)
 
   macro_end ();
 
+  mips_assembling_insn = FALSE;
   demand_empty_rest_of_line ();
 }
 
@@ -16811,11 +16818,15 @@ s_cprestore (int ignore ATTRIBUTE_UNUSED)
   ex.X_op_symbol = NULL;
   ex.X_add_number = mips_cprestore_offset;
 
+  mips_mark_labels ();
+  mips_assembling_insn = TRUE;
+
   macro_start ();
   macro_build_ldst_constoffset (&ex, ADDRESS_STORE_INSN, mips_gp_register,
 				SP, HAVE_64BIT_ADDRESSES);
   macro_end ();
 
+  mips_assembling_insn = FALSE;
   demand_empty_rest_of_line ();
 }
 
@@ -16846,6 +16857,9 @@ s_cpreturn (int ignore ATTRIBUTE_UNUSED)
       return;
     }
 
+  mips_mark_labels ();
+  mips_assembling_insn = TRUE;
+
   macro_start ();
   if (mips_cpreturn_register == -1)
     {
@@ -16861,6 +16875,7 @@ s_cpreturn (int ignore ATTRIBUTE_UNUSED)
 		 mips_cpreturn_register, 0);
   macro_end ();
 
+  mips_assembling_insn = FALSE;
   demand_empty_rest_of_line ();
 }
 
@@ -17040,12 +17055,16 @@ s_cpadd (int ignore ATTRIBUTE_UNUSED)
       return;
     }
 
+  mips_mark_labels ();
+  mips_assembling_insn = TRUE;
+
   /* Add $gp to the register named as an argument.  */
   macro_start ();
   reg = tc_get_register (0);
   macro_build (NULL, ADDRESS_ADD_INSN, "d,v,t", reg, reg, mips_gp_register);
   macro_end ();
 
+  mips_assembling_insn = FALSE;
   demand_empty_rest_of_line ();
 }
 

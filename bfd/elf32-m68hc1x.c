@@ -67,11 +67,10 @@ m68hc11_elf_hash_table_create (bfd *abfd)
   struct m68hc11_elf_link_hash_table *ret;
   bfd_size_type amt = sizeof (struct m68hc11_elf_link_hash_table);
 
-  ret = (struct m68hc11_elf_link_hash_table *) bfd_malloc (amt);
+  ret = (struct m68hc11_elf_link_hash_table *) bfd_zmalloc (amt);
   if (ret == (struct m68hc11_elf_link_hash_table *) NULL)
     return NULL;
 
-  memset (ret, 0, amt);
   if (!_bfd_elf_link_hash_table_init (&ret->root, abfd,
 				      _bfd_elf_link_hash_newfunc,
 				      sizeof (struct elf_link_hash_entry),
@@ -93,11 +92,6 @@ m68hc11_elf_hash_table_create (bfd *abfd)
 			    sizeof (struct elf32_m68hc11_stub_hash_entry)))
     return NULL;
 
-  ret->stub_bfd = NULL;
-  ret->stub_section = 0;
-  ret->add_stub_section = NULL;
-  ret->sym_cache.abfd = NULL;
-
   return ret;
 }
 
@@ -111,7 +105,7 @@ m68hc11_elf_bfd_link_hash_table_free (struct bfd_link_hash_table *hash)
 
   bfd_hash_table_free (ret->stub_hash_table);
   free (ret->stub_hash_table);
-  _bfd_generic_link_hash_table_free (hash);
+  _bfd_elf_link_hash_table_free (hash);
 }
 
 /* Assorted hash table functions.  */

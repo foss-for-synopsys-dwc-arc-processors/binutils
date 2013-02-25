@@ -1,12 +1,12 @@
 -*- text -*-
 
+* Add support for Altera Nios II.
+
 * Add support for the V850E3V5 architecture.
 
 * Add support for the Imagination Technologies Meta processor.
 
 * --enable-new-dtags no longer generates old dtags in addition to new dtags.
-
-* For Linux/GNU targets, new dtags is now the default.
 
 Changes in 2.23:
 

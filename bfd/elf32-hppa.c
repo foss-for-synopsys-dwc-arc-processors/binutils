@@ -419,7 +419,7 @@ elf32_hppa_link_hash_table_create (bfd *abfd)
   struct elf32_hppa_link_hash_table *htab;
   bfd_size_type amt = sizeof (*htab);
 
-  htab = bfd_malloc (amt);
+  htab = bfd_zmalloc (amt);
   if (htab == NULL)
     return NULL;
 
@@ -436,26 +436,8 @@ elf32_hppa_link_hash_table_create (bfd *abfd)
 			    sizeof (struct elf32_hppa_stub_hash_entry)))
     return NULL;
 
-  htab->stub_bfd = NULL;
-  htab->add_stub_section = NULL;
-  htab->layout_sections_again = NULL;
-  htab->stub_group = NULL;
-  htab->sgot = NULL;
-  htab->srelgot = NULL;
-  htab->splt = NULL;
-  htab->srelplt = NULL;
-  htab->sdynbss = NULL;
-  htab->srelbss = NULL;
   htab->text_segment_base = (bfd_vma) -1;
   htab->data_segment_base = (bfd_vma) -1;
-  htab->multi_subspace = 0;
-  htab->has_12bit_branch = 0;
-  htab->has_17bit_branch = 0;
-  htab->has_22bit_branch = 0;
-  htab->need_plt_stub = 0;
-  htab->sym_cache.abfd = NULL;
-  htab->tls_ldm_got.refcount = 0;
-
   return &htab->etab.root;
 }
 
@@ -468,7 +450,7 @@ elf32_hppa_link_hash_table_free (struct bfd_link_hash_table *btab)
     = (struct elf32_hppa_link_hash_table *) btab;
 
   bfd_hash_table_free (&htab->bstab);
-  _bfd_generic_link_hash_table_free (btab);
+  _bfd_elf_link_hash_table_free (btab);
 }
 
 /* Build a name for an entry in the stub hash table.  */
@@ -1724,10 +1706,10 @@ elf32_hppa_grok_prstatus (bfd *abfd, Elf_Internal_Note *note)
 
       case 396:		/* Linux/hppa */
 	/* pr_cursig */
-	elf_tdata (abfd)->core_signal = bfd_get_16 (abfd, note->descdata + 12);
+	elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
 
 	/* pr_pid */
-	elf_tdata (abfd)->core_lwpid = bfd_get_32 (abfd, note->descdata + 24);
+	elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 24);
 
 	/* pr_reg */
 	offset = 72;
@@ -1750,9 +1732,9 @@ elf32_hppa_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
 	return FALSE;
 
       case 124:		/* Linux/hppa elf_prpsinfo.  */
-	elf_tdata (abfd)->core_program
+	elf_tdata (abfd)->core->program
 	  = _bfd_elfcore_strndup (abfd, note->descdata + 28, 16);
-	elf_tdata (abfd)->core_command
+	elf_tdata (abfd)->core->command
 	  = _bfd_elfcore_strndup (abfd, note->descdata + 44, 80);
     }
 
@@ -1760,7 +1742,7 @@ elf32_hppa_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
      onto the end of the args in some (at least one anyway)
      implementations, so strip it off if it exists.  */
   {
-    char *command = elf_tdata (abfd)->core_command;
+    char *command = elf_tdata (abfd)->core->command;
     int n = strlen (command);
 
     if (0 < n && command[n - 1] == ' ')

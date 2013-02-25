@@ -422,6 +422,7 @@ enum elf_target_id
   MICROBLAZE_ELF_DATA,
   MIPS_ELF_DATA,
   MN10300_ELF_DATA,
+  NIOS2_ELF_DATA,
   PPC32_ELF_DATA,
   PPC64_ELF_DATA,
   S390_ELF_DATA,
@@ -1512,6 +1513,64 @@ struct sdt_note
   bfd_byte data[1];
 };
 
+/* NT_GNU_BUILD_ID note type info for input BFDs.  */
+struct elf_build_id
+{
+  size_t size;
+  bfd_byte data[1];
+};
+
+/* tdata information grabbed from an elf core file.  */
+struct core_elf_obj_tdata
+{
+  int signal;
+  int pid;
+  int lwpid;
+  char* program;
+  char* command;
+};
+
+/* Extra tdata information held for output ELF BFDs.  */
+struct output_elf_obj_tdata
+{
+  struct elf_segment_map *seg_map;
+  struct elf_strtab_hash *strtab_ptr;
+
+  /* STT_SECTION symbols for each section */
+  asymbol **section_syms;
+
+  /* Used to determine if PT_GNU_EH_FRAME segment header should be
+     created.  */
+  asection *eh_frame_hdr;
+
+  /* NT_GNU_BUILD_ID note type info.  */
+  struct
+  {
+    bfd_boolean (*after_write_object_contents) (bfd *);
+    const char *style;
+    asection *sec;
+  } build_id;
+
+  /* Records the result of `get_program_header_size'.  */
+  bfd_size_type program_header_size;
+
+  /* Used when laying out sections.  */
+  file_ptr next_file_pos;
+
+  int num_section_syms;
+  unsigned int shstrtab_section, strtab_section;
+
+  /* Segment flags for the PT_GNU_STACK segment.  */
+  unsigned int stack_flags;
+
+  /* This is set to TRUE if the object was created by the backend
+     linker.  */
+  bfd_boolean linker;
+
+  /* Used to determine if the e_flags field has been initialized */
+  bfd_boolean flags_init;
+};
+
 /* Some private data is stashed away for future use using the tdata pointer
    in the bfd structure.  */
 
@@ -1520,13 +1579,6 @@ struct elf_obj_tdata
   Elf_Internal_Ehdr elf_header[1];	/* Actual data, but ref like ptr */
   Elf_Internal_Shdr **elf_sect_ptr;
   Elf_Internal_Phdr *phdr;
-  struct elf_segment_map *segment_map;
-  struct elf_strtab_hash *strtab_ptr;
-  int num_locals;
-  int num_globals;
-  unsigned int num_elf_sections;	/* elf_sect_ptr size */
-  int num_section_syms;
-  asymbol **section_syms;		/* STT_SECTION symbols for each section */
   Elf_Internal_Shdr symtab_hdr;
   Elf_Internal_Shdr shstrtab_hdr;
   Elf_Internal_Shdr strtab_hdr;
@@ -1536,20 +1588,9 @@ struct elf_obj_tdata
   Elf_Internal_Shdr dynverref_hdr;
   Elf_Internal_Shdr dynverdef_hdr;
   Elf_Internal_Shdr symtab_shndx_hdr;
-  unsigned int symtab_section, shstrtab_section;
-  unsigned int strtab_section, dynsymtab_section;
-  unsigned int symtab_shndx_section;
-  unsigned int dynversym_section, dynverdef_section, dynverref_section;
-  file_ptr next_file_pos;
   bfd_vma gp;				/* The gp value */
   unsigned int gp_size;			/* The gp size */
-
-  /* Information grabbed from an elf core file.  */
-  int core_signal;
-  int core_pid;
-  int core_lwpid;
-  char* core_program;
-  char* core_command;
+  unsigned int num_elf_sections;	/* elf_sect_ptr size */
 
   /* A mapping from external symbols to entries in the linker hash
      table, used when linking.  This is indexed by the symbol index
@@ -1580,17 +1621,8 @@ struct elf_obj_tdata
      are used by a dynamic object.  */
   const char *dt_audit;
 
-  /* Records the result of `get_program_header_size'.  */
-  bfd_size_type program_header_size;
-
   /* Used by find_nearest_line entry point.  */
   void *line_info;
-
-  /* Used by MIPS ELF find_nearest_line entry point.  The structure
-     could be included directly in this one, but there's no point to
-     wasting the memory just for the infrequently called
-     find_nearest_line.  */
-  struct mips_elf_find_line *find_line_info;
 
   /* A place to stash dwarf1 info for this bfd.  */
   struct dwarf1_debug *dwarf1_find_line_info;
@@ -1598,18 +1630,8 @@ struct elf_obj_tdata
   /* A place to stash dwarf2 info for this bfd.  */
   void *dwarf2_find_line_info;
 
-  /* An array of stub sections indexed by symbol number, used by the
-     MIPS ELF linker.  FIXME: We should figure out some way to only
-     include this field for a MIPS ELF target.  */
-  asection **local_stubs;
-  asection **local_call_stubs;
-
-  /* Used to determine if PT_GNU_EH_FRAME segment header should be
-     created.  */
-  asection *eh_frame_hdr;
-
-  Elf_Internal_Shdr **group_sect_ptr;
-  int num_group;
+  /* Stash away info for yet another find line/function variant.  */
+  void *elf_find_function_cache;
 
   /* Number of symbol version definitions we are about to emit.  */
   unsigned int cverdefs;
@@ -1617,33 +1639,43 @@ struct elf_obj_tdata
   /* Number of symbol version references we are about to emit.  */
   unsigned int cverrefs;
 
-  /* Segment flags for the PT_GNU_STACK segment.  */
-  unsigned int stack_flags;
-
   /* Symbol version definitions in external objects.  */
   Elf_Internal_Verdef *verdef;
 
   /* Symbol version references to external objects.  */
   Elf_Internal_Verneed *verref;
 
-  /* The Irix 5 support uses two virtual sections, which represent
-     text/data symbols defined in dynamic objects.  */
-  asymbol *elf_data_symbol;
-  asymbol *elf_text_symbol;
-  asection *elf_data_section;
-  asection *elf_text_section;
-
   /* A pointer to the .eh_frame section.  */
   asection *eh_frame_section;
+
+  /* Symbol buffer.  */
+  void *symbuf;
+
+  obj_attribute known_obj_attributes[2][NUM_KNOWN_OBJ_ATTRIBUTES];
+  obj_attribute_list *other_obj_attributes[2];
+
+  /* NT_GNU_BUILD_ID note type.  */
+  struct elf_build_id *build_id;
+
+  /* Linked-list containing information about every Systemtap section
+     found in the object file.  Each section corresponds to one entry
+     in the list.  */
+  struct sdt_note *sdt_note_head;
+
+  Elf_Internal_Shdr **group_sect_ptr;
+  int num_group;
+
+  unsigned int symtab_section, symtab_shndx_section, dynsymtab_section;
+  unsigned int dynversym_section, dynverdef_section, dynverref_section;
+
+  /* An identifier used to distinguish different target
+     specific extensions to this structure.  */
+  enum elf_target_id object_id;
 
   /* Whether a dyanmic object was specified normally on the linker
      command line, or was specified when --as-needed was in effect,
      or was found via a DT_NEEDED entry.  */
   enum dynamic_lib_link_class dyn_lib_class;
-
-  /* This is set to TRUE if the object was created by the backend
-     linker.  */
-  bfd_boolean linker;
 
   /* Irix 5 often screws up the symbol table, sorting local symbols
      after global symbols.  This flag is set if the symbol table in
@@ -1652,48 +1684,35 @@ struct elf_obj_tdata
      symbols.  */
   bfd_boolean bad_symtab;
 
-  /* Used to determine if the e_flags field has been initialized */
-  bfd_boolean flags_init;
-
-  /* Symbol buffer.  */
-  void *symbuf;
-
-  obj_attribute known_obj_attributes[2][NUM_KNOWN_OBJ_ATTRIBUTES];
-  obj_attribute_list *other_obj_attributes[2];
-
-  /* Called at the end of _bfd_elf_write_object_contents if not NULL.  */
-  bfd_boolean (*after_write_object_contents) (bfd *);
-  void *after_write_object_contents_info;
-
-  /* NT_GNU_BUILD_ID note type.  */
-  bfd_size_type build_id_size;
-  bfd_byte *build_id;
-
-  /* Linked-list containing information about every Systemtap section
-     found in the object file.  Each section corresponds to one entry
-     in the list.  */
-  struct sdt_note *sdt_note_head;
-
   /* True if the bfd contains symbols that have the STT_GNU_IFUNC
      symbol type or STB_GNU_UNIQUE binding.  Used to set the osabi
      field in the ELF header structure.  */
   bfd_boolean has_gnu_symbols;
 
-  /* An identifier used to distinguish different target
-     specific extensions to this structure.  */
-  enum elf_target_id object_id;
+  /* Information grabbed from an elf core file.  */
+  struct core_elf_obj_tdata *core;
+
+  /* More information held for output ELF BFDs.  */
+  struct output_elf_obj_tdata *o;
 };
 
 #define elf_tdata(bfd)		((bfd) -> tdata.elf_obj_data)
 
 #define elf_object_id(bfd)	(elf_tdata(bfd) -> object_id)
-#define elf_program_header_size(bfd) (elf_tdata(bfd) -> program_header_size)
+#define elf_program_header_size(bfd) (elf_tdata(bfd) -> o->program_header_size)
 #define elf_elfheader(bfd)	(elf_tdata(bfd) -> elf_header)
 #define elf_elfsections(bfd)	(elf_tdata(bfd) -> elf_sect_ptr)
 #define elf_numsections(bfd)	(elf_tdata(bfd) -> num_elf_sections)
-#define elf_shstrtab(bfd)	(elf_tdata(bfd) -> strtab_ptr)
+#define elf_seg_map(bfd)	(elf_tdata(bfd) -> o->seg_map)
+#define elf_next_file_pos(bfd)	(elf_tdata(bfd) -> o->next_file_pos)
+#define elf_eh_frame_hdr(bfd)	(elf_tdata(bfd) -> o->eh_frame_hdr)
+#define elf_linker(bfd)		(elf_tdata(bfd) -> o->linker)
+#define elf_stack_flags(bfd)	(elf_tdata(bfd) -> o->stack_flags)
+#define elf_shstrtab(bfd)	(elf_tdata(bfd) -> o->strtab_ptr)
 #define elf_onesymtab(bfd)	(elf_tdata(bfd) -> symtab_section)
 #define elf_symtab_shndx(bfd)	(elf_tdata(bfd) -> symtab_shndx_section)
+#define elf_strtab_sec(bfd)	(elf_tdata(bfd) -> o->strtab_section)
+#define elf_shstrtab_sec(bfd)	(elf_tdata(bfd) -> o->shstrtab_section)
 #define elf_symtab_hdr(bfd)	(elf_tdata(bfd) -> symtab_hdr)
 #define elf_dynsymtab(bfd)	(elf_tdata(bfd) -> dynsymtab_section)
 #define elf_dynversym(bfd)	(elf_tdata(bfd) -> dynversym_section)
@@ -1701,10 +1720,8 @@ struct elf_obj_tdata
 #define elf_dynverref(bfd)	(elf_tdata(bfd) -> dynverref_section)
 #define elf_eh_frame_section(bfd) \
 				(elf_tdata(bfd) -> eh_frame_section)
-#define elf_num_locals(bfd)	(elf_tdata(bfd) -> num_locals)
-#define elf_num_globals(bfd)	(elf_tdata(bfd) -> num_globals)
-#define elf_section_syms(bfd)	(elf_tdata(bfd) -> section_syms)
-#define elf_num_section_syms(bfd) (elf_tdata(bfd) -> num_section_syms)
+#define elf_section_syms(bfd)	(elf_tdata(bfd) -> o->section_syms)
+#define elf_num_section_syms(bfd) (elf_tdata(bfd) -> o->num_section_syms)
 #define core_prpsinfo(bfd)	(elf_tdata(bfd) -> prpsinfo)
 #define core_prstatus(bfd)	(elf_tdata(bfd) -> prstatus)
 #define elf_gp(bfd)		(elf_tdata(bfd) -> gp)
@@ -1717,7 +1734,7 @@ struct elf_obj_tdata
 #define elf_dt_audit(bfd)	(elf_tdata(bfd) -> dt_audit)
 #define elf_dyn_lib_class(bfd)	(elf_tdata(bfd) -> dyn_lib_class)
 #define elf_bad_symtab(bfd)	(elf_tdata(bfd) -> bad_symtab)
-#define elf_flags_init(bfd)	(elf_tdata(bfd) -> flags_init)
+#define elf_flags_init(bfd)	(elf_tdata(bfd) -> o->flags_init)
 #define elf_known_obj_attributes(bfd) (elf_tdata (bfd) -> known_obj_attributes)
 #define elf_other_obj_attributes(bfd) (elf_tdata (bfd) -> other_obj_attributes)
 #define elf_known_obj_attributes_proc(bfd) \
@@ -1801,6 +1818,8 @@ extern struct bfd_hash_entry *_bfd_elf_link_hash_newfunc
   (struct bfd_hash_entry *, struct bfd_hash_table *, const char *);
 extern struct bfd_link_hash_table *_bfd_elf_link_hash_table_create
   (bfd *);
+extern void _bfd_elf_link_hash_table_free
+  (struct bfd_link_hash_table *);
 extern void _bfd_elf_link_hash_copy_indirect
   (struct bfd_link_info *, struct elf_link_hash_entry *,
    struct elf_link_hash_entry *);
@@ -1941,10 +1960,10 @@ extern void _bfd_elf_strtab_delref
   (struct elf_strtab_hash *, bfd_size_type);
 extern unsigned int _bfd_elf_strtab_refcount
   (struct elf_strtab_hash *, bfd_size_type);
-extern void _bfd_elf_strtab_clear_refs
+extern void _bfd_elf_strtab_clear_all_refs
+  (struct elf_strtab_hash *tab);
+extern void _bfd_elf_strtab_restore_size
   (struct elf_strtab_hash *, bfd_size_type);
-#define _bfd_elf_strtab_clear_all_refs(tab) \
-  do { _bfd_elf_strtab_clear_refs (tab, 1); } while (0)
 extern bfd_size_type _bfd_elf_strtab_size
   (struct elf_strtab_hash *);
 extern bfd_size_type _bfd_elf_strtab_offset
@@ -2285,6 +2304,42 @@ extern char *elfcore_write_lwpstatus
   (bfd *, char *, int *, long, int, const void *);
 extern char *elfcore_write_register_note
   (bfd *, char *, int *, const char *, const void *, int);
+
+/* Internal structure which holds information to be included in the
+   PRPSINFO section of Linux core files.
+
+   This is an "internal" structure in the sense that it should be used
+   to pass information to BFD (via the `elfcore_write_linux_prpsinfo'
+   function), so things like endianess shouldn't be an issue.  This
+   structure will eventually be converted in one of the
+   `elf_external_linux_*' structures and written out to an output bfd
+   by one of the functions declared below.  */
+
+struct elf_internal_linux_prpsinfo
+  {
+    char pr_state;			/* Numeric process state.  */
+    char pr_sname;			/* Char for pr_state.  */
+    char pr_zomb;			/* Zombie.  */
+    char pr_nice;			/* Nice val.  */
+    unsigned long pr_flag;		/* Flags.  */
+    unsigned int pr_uid;
+    unsigned int pr_gid;
+    int pr_pid, pr_ppid, pr_pgrp, pr_sid;
+    char pr_fname[16 + 1];		/* Filename of executable.  */
+    char pr_psargs[80 + 1];		/* Initial part of arg list.  */
+  };
+
+/* Linux/most 32-bit archs.  */
+extern char *elfcore_write_linux_prpsinfo32
+  (bfd *, char *, int *, const struct elf_internal_linux_prpsinfo *);
+
+/* Linux/most 64-bit archs.  */
+extern char *elfcore_write_linux_prpsinfo64
+  (bfd *, char *, int *, const struct elf_internal_linux_prpsinfo *);
+
+/* Linux/PPC32 uses different layout compared to most archs.  */
+extern char *elfcore_write_ppc_linux_prpsinfo32
+  (bfd *, char *, int *, const struct elf_internal_linux_prpsinfo *);
 
 extern bfd *_bfd_elf32_bfd_from_remote_memory
   (bfd *templ, bfd_vma ehdr_vma, bfd_vma *loadbasep,
