@@ -1,3 +1,7 @@
+2013-02-25  Simon Cook  <simon.cook@embecosm.com>
+
+	* configure.tgt: Make arc*-*-elf* valid for big endian ARC.
+
 2013-02-05  Simon Cook  <simon.cook@embecosm.com>
 
 	* configure.tgt: Split elf and uClibc default emulation script definitons.

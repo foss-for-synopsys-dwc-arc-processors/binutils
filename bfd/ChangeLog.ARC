@@ -1,3 +1,7 @@
+2013-02-25  Simon Cook  <simon.cook@embecosm.com>
+
+	* bfd/config.bfd: Make arc*-*-elf* valid for big endian ARC.
+
 2013-02-05  Simon Cook  <simon.cook@embecosm.com>
 
 	* elf32-arc.c (elf_arc_check_relocs): Change

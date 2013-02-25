@@ -1,3 +1,9 @@
+2013-02-25  Simon Cook  <simon.cook@embecosm.com>
+
+	* config.sub: Make arceb-* valid.
+	* configure.ac: Make arceb-*-* valid.
+	* configure: Regenerate.
+
 2013-02-05  Simon Cook  <simon.cook@embecosm.com>
 
 	* configure: Regenerated.
