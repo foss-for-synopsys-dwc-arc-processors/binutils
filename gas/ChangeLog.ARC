@@ -1,3 +1,8 @@
+2013-03-29  Jeremy Bennett  <jeremy.bennett@embecosm.com>
+
+	* config/tc-arc.c (md_assemble): Tidy up debris left over from
+	mishandled merge.
+
 2013-03-20  Joern Rennecke  <joern.rennecke@embecosm.com>
 
 	* config/tc-arc.c (tc_gen_reloc): Adjust offset to reflect
