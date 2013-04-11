@@ -590,6 +590,7 @@ guess_is_rela (unsigned int e_machine)
     /* START ARC LOCAL */
     case EM_ARC:
     case EM_ARCOMPACT:
+    case EM_ARCOMPACT2:
     /* END ARC LOCAL */
     case EM_AVR:
     case EM_AVR_OLD:
@@ -1150,6 +1151,7 @@ dump_relocations (FILE * file,
 
 	/* START ARC LOCAL */
 	case EM_ARCOMPACT:
+	case EM_ARCOMPACT2:
 	/* END ARC LOCAL */
 	case EM_ARC:
 	  rtype = elf_arc_reloc_type (type);
@@ -1931,6 +1933,7 @@ get_machine_name (unsigned e_machine)
     case EM_ARC:		return "ARC";
     /* START ARC LOCAL */
     case EM_ARCOMPACT:		return "ARCompact";
+    case EM_ARCOMPACT2:		return "ARCompact2";
     /* END ARC LOCAL */
     case EM_H8_300:		return "Renesas H8/300";
     case EM_H8_300H:		return "Renesas H8/300H";
@@ -2310,6 +2313,27 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	  break;
 
 	/* START ARC LOCAL */
+	case EM_ARCOMPACT2:
+	  switch(e_flags & EF_ARC_MACH_MSK)
+	    {
+	    case E_ARC_MACH_ARCV2:
+	      strcat (buf, ", ARC_V2");
+	      break;
+	    default:
+	      strcat (buf, ", Generic ARCompact2");
+	      break;
+	    }
+	  switch(e_flags & EF_ARC_OSABI_MSK)
+	    {
+	    case E_ARC_OSABI_ORIG:
+	      strcat (buf, ", legacy syscall ABI");
+	      break;
+	    case E_ARC_OSABI_V2:
+	      /* For 3.2+ Linux kernels which use asm-generic hdrs */
+	      strcat (buf, ", v2 syscall ABI");
+	      break;
+	    }
+	  break;
 	case EM_ARCOMPACT:
 	  switch(e_flags & EF_ARC_MACH_MSK)
 	    {
@@ -10073,6 +10097,7 @@ is_32bit_abs_reloc (unsigned int reloc_type)
     case EM_ARC:
     /* START ARC LOCAL */
     case EM_ARCOMPACT:
+    case EM_ARCOMPACT2:
     /* END ARC LOCAL */
       return reloc_type == 4; /* R_ARC_32.  */
     case EM_ARM:
@@ -10379,6 +10404,7 @@ is_16bit_abs_reloc (unsigned int reloc_type)
     /* START ARC LOCAL */
     case EM_ARC:
     case EM_ARCOMPACT:
+    case EM_ARCOMPACT2:
       return reloc_type == 2; /* R_ARC_16.  */
     /* END ARC LOCAL */
     case EM_AVR_OLD:
@@ -10446,6 +10472,7 @@ is_none_reloc (unsigned int reloc_type)
     /* START ARC LOCAL */
     case EM_ARC:     /* R_ARC_NONE.  */
     case EM_ARCOMPACT: /* R_ARC_NONE.  */
+    case EM_ARCOMPACT2:
     /* END ARC LOCAL */
     case EM_ARM:     /* R_ARM_NONE.  */
     case EM_IA_64:   /* R_IA64_NONE.  */
