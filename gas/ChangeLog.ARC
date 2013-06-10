@@ -1,3 +1,9 @@
+2013-06-06  Claudiu Zissulescu <claziss@synopsys.com>
+
+	* config/extlib/arcextlib.s : Define __ARCCOMPACT__ also for ARCv2
+        * config/tc-arc.c: Add -mav2em option for EM, enable SPFP and
+	DPFP extensions for EM.
+
 2013-06-06  Simon Cook  <simon.cook@embecosm.com>
 
 	* config/tc-arc.c (options): Added OPTION_MCPU for -mcpu
@@ -71,6 +77,18 @@
 	Use BFD_RELOC_ARC_PC32 instead of BFD_RELOC_32 if EXP is a difference
 	with the subtrahend being a symbol in the current section.
 	(md_apply_fix): Handle BFD_RELOC_ARC_PC32.
+
+2013-04-05  Simon Cook  <simon.cook@embecosm.com>
+
+	Port from
+	2013-04-02  Claudiu Zissulescu <claziss@synopsys.com>
+	* config/tc-arc.c (md_assemble): Fix fixup for %st operand.
+
+2013-04-05  Simon Cook  <simon.cook@embecosm.com>
+
+	Port from
+	2013-03-19  Claudiu Zissulescu <claziss@synopsys.com>
+	* config/tc-arc.c (md_assemble): Fixup fix for STAR9000593624.
 
 2013-03-27  Jeremy Bennett  <jeremy.bennett@embecosm.com>
 
