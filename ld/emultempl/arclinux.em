@@ -26,6 +26,12 @@
 cat >>e${EMULATION_NAME}.c <<EOF
 extern char * init_str;
 extern char * fini_str;
+
+static void
+arc_after_parse (void)
+{
+  //Do nothing
+}
 EOF
 
 PARSE_AND_LIST_PROLOGUE='
@@ -50,3 +56,6 @@ PARSE_AND_LIST_ARGS_CASES='
       init_str = optarg;
       break;
 '
+# Put these extra alpha routines in ld_${EMULATION_NAME}_emulation
+#
+LDEMUL_AFTER_PARSE=arc_after_parse

@@ -1,3 +1,8 @@
+2013-06-21  Claudiu Zissulescu <claziss@synopsys.com>
+
+        * emultempl/arclinux.em : call arc_after_parse function instead of
+	after_parse_default. Hence, avoid inserting any _start undef symbol.
+
 2013-05-24  Vineet Gupta <vgupta@synopsys.com>
 
 	* emulparams/arclinux.sh: Define COMMONPAGESIZE as 8k which
