@@ -1,3 +1,7 @@
+2013-09-10  Anton Kolesov  <akolesov@synopsys.com>
+
+	* binutils-all/objcopy.exp: Build testglue only if required.
+
 2013-02-14  Maciej W. Rozycki  <macro@codesourcery.com>
 
 	* binutils-all/mips/mixed-mips16.s: Add missing stack adjustment.
