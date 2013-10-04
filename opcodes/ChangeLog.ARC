@@ -1,3 +1,8 @@
+2013-10-04 Claudiu Zissulescu <claziss@synopsys.com>
+
+	* arc-opc-old.c: Fixed limm_p flag for prefetch instructions
+          when prefetching a small data symbol.
+
 2013-08-23 Anton Kolesov <akolesov@synopsys.com>
 
 	* arcompact-dis.c, arc-dis-old.c (dsmOneArcInst): Field _addrWriteBack was
