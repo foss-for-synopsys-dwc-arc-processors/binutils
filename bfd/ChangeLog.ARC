@@ -1,3 +1,7 @@
+2013-11-13 Claudiu Zissulescu <claziss@synopsys.com>
+
+	* elf32-arc.c: Add arc_elf_copy_private_bfd_data() function.
+
 2013-11-11 Claudiu Zissulescu <claziss@synopsys.com>
 
 	* cpu-arc.c: Add HS as a valid processor type.
