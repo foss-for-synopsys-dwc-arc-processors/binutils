@@ -98,7 +98,13 @@ extern int arc_parse_name (const char *, struct expressionS *);
 
 /* No shared lib support, so we don't need to ensure externally
    visible symbols can be overridden.  */
+/* FIXME: We're supposed to support shared libs with uClibc - so
+   should we change this?  */
 #define EXTERN_FORCE_RELOC 0
+
+#define TC_FORCE_RELOC(FIX) \
+  ((FIX)->fx_r_type == BFD_RELOC_TLS_GD_DEF \
+   || generic_force_reloc (FIX))
 
 /* BFD_RELOC_ARC_TLS_GD_LD may use fx_subsy to store a label that is
    later turned into fx_offset.  */

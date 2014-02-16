@@ -1,3 +1,11 @@
+2014-02-16  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* reloc.c (RELOC_ARC_TLS_GD_DEF): New enum value.
+	* elf32-arc.c (elf_arc_howto_table): Add entry for R_ARC_TLS_GD_DEF.
+	(arc_signed_reloc_type, arc_reloc_map): Likewise.
+	(arc_tls_transition): Handle (i.e. ignore) R_ARC_TLS_GD_DEF.
+	* bfd-in2.h, libbfd.h: Regenerate.
+
 2014-02-14  Joern Rennecke  <joern.rennecke@embecosm.com>
 
 	* elf32-arc.c (arc_plugin_one_reloc): No longer static.

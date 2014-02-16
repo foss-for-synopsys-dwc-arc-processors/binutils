@@ -4302,6 +4302,10 @@ md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
 
 	  break;
 
+	case BFD_RELOC_ARC_TLS_GD_DEF:
+	  gas_assert (!fixP->fx_done);
+	  break;
+	
 	case BFD_RELOC_ARC_TLS_GD_LD:
 	  gas_assert (!fixP->fx_offset);
 	  if (fixP->fx_subsy)
@@ -4331,9 +4335,7 @@ md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
 	    }
 	  short overflow_detected = 0;
 	  char *contents = fixP->fx_frag->fr_literal + fixP->fx_where;
-	  value
-	    = md_chars_to_number (fixP->fx_frag->fr_literal + fixP->fx_where,
-				  -4);
+	  value = md_chars_to_number (contents, -4);
 	  value
 	    = arc_plugin_one_reloc (value, R_ARC_TLS_LE_S9, fixP->fx_offset,
 				    &overflow_detected, TRUE);
@@ -4477,6 +4479,7 @@ const pseudo_typeS md_pseudo_table[] =
   { "extinstruction", arc_ac_extinst, 0 },
   { "tls_gd_ld",   arc_extra_reloc, BFD_RELOC_ARC_TLS_GD_LD },
   { "tls_gd_call", arc_extra_reloc, BFD_RELOC_ARC_TLS_GD_CALL },
+  { "tls_gd_def",  arc_extra_reloc, BFD_RELOC_ARC_TLS_GD_DEF },
   { NULL, 0, 0 },
 };
 
@@ -6576,6 +6579,15 @@ arc_extra_reloc (int r_type)
   c = get_symbol_end ();
   sym = symbol_find_or_make (sym_name);
   *input_line_pointer = c;
+  /* FIXME: we should really keep the reloc against the tls var and check
+     in the linker if it's still global.  But how would we pull in another
+     input object that late in the game?
+     Or should the dynamic linker do that instead?
+
+     For now, we just pull in __tls_get_gd_dispatch whenever there is a
+     global dynamic tls variable definition.  */
+  if (r_type == BFD_RELOC_ARC_TLS_GD_DEF)
+    sym = symbol_find_or_make ("__tls_get_gd_dispatch");
   if (c == ',' && r_type == BFD_RELOC_ARC_TLS_GD_LD)
     {
       char *lab_name = ++input_line_pointer;
@@ -6586,7 +6598,8 @@ arc_extra_reloc (int r_type)
   fixS *fixP
     = fix_new (frag_now,	/* Which frag?  */
 	       frag_now_fix (),	/* Where in that frag?  */
-               2,		/* size: 1, 2, or 4 usually.  */
+				/* size: 1, 2, or 4 usually.  */
+	       r_type == BFD_RELOC_ARC_TLS_GD_DEF ? 0 : 2,
 	       sym,		/* X_add_symbol.  */
 	       0,		/* X_add_number.  */
 	       FALSE,		/* TRUE if PC-relative relocation.  */

@@ -490,6 +490,7 @@ static reloc_howto_type elf_arc_howto_table[] =
 		  "R_ARC_TLS_GD_GOT",-1),
   ARC_IGNORE_HOWTO (R_ARC_TLS_GD_LD,"R_ARC_TLS_GD_LD"),
   ARC_IGNORE_HOWTO (R_ARC_TLS_GD_CALL,"R_ARC_TLS_GD_CALL"),
+  ARC_IGNORE_HOWTO (R_ARC_TLS_GD_DEF,"R_ARC_TLS_GD_DEF"),
   ARC_RELA_HOWTO (R_ARC_TLS_IE_GOT, 0, 2, 32, FALSE, 0, arcompact_elf_me_reloc,
 		  "R_ARC_TLS_IE_GOT",-1),
   ARC_RELA_HOWTO (R_ARC_TLS_DTPOFF_S9, 0, 2, 32, FALSE, 0,
@@ -594,10 +595,11 @@ short arc_signed_reloc_type[] =
   0, //  R_ARC_TLS_GD_GOT	0x45
   0, //  R_ARC_TLS_GD_LD	0x46
   0, //  R_ARC_TLS_GD_CALL	0x47
-  0, //  R_ARC_TLS_IE_GOT	0x48
-  1, //  R_ARC_TLS_DTPOFF_S9	0x49
-  1, //  R_ARC_TLS_LE_S9	0x4a
-  1, //  R_ARC_TLS_LE_32	0x4b
+  0, //  R_ARC_TLS_GD_DEF	0x48
+  0, //  R_ARC_TLS_IE_GOT	0x49
+  1, //  R_ARC_TLS_DTPOFF_S9	0x4a
+  1, //  R_ARC_TLS_LE_S9	0x4b
+  1, //  R_ARC_TLS_LE_32	0x4c
 };
 
 
@@ -665,6 +667,7 @@ static const struct arc_reloc_map arc_reloc_map[] =
   { BFD_RELOC_ARC_TLS_GD_GOT, R_ARC_TLS_GD_GOT },
   { BFD_RELOC_ARC_TLS_GD_LD,  R_ARC_TLS_GD_LD },
   { BFD_RELOC_ARC_TLS_GD_CALL,R_ARC_TLS_GD_CALL },
+  { BFD_RELOC_ARC_TLS_GD_DEF, R_ARC_TLS_GD_DEF },
   { BFD_RELOC_ARC_TLS_IE_GOT, R_ARC_TLS_IE_GOT },
   { BFD_RELOC_ARC_TLS_DTPOFF_S9, R_ARC_TLS_DTPOFF_S9 },
   { BFD_RELOC_ARC_TLS_LE_S9,  R_ARC_TLS_LE_S9 },
@@ -1812,6 +1815,15 @@ arc_tls_transition (const Elf_Internal_Rela *rel,
 	  else
 	    bfd_put_16 (abfd, 0x78E0, contents + rel->r_offset);
 	}
+      return R_ARC_NONE;
+    case R_ARC_TLS_GD_DEF:
+      /* FIXME here we could learn if we want to pull in _tls_get_gd_dispatch
+	 from tls_get_addr-descr.S , but how could we actually do it this
+	 late?  */
+#if 0
+      if (contents && *ttp == GOT_TLS_GD)
+	/* Set flag to pull in _tls_get_gd_dispatch.  */
+#endif
       return R_ARC_NONE;
     default:
       break;

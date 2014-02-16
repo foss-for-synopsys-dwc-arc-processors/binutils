@@ -3607,6 +3607,7 @@ of the GOT to the symbol's global offset table entry.  */
   BFD_RELOC_ARC_TLS_LE_32,
   BFD_RELOC_ARC_TLS_DTPOFF_S9,
   BFD_RELOC_ARC_TLS_DTPOFF,
+  BFD_RELOC_ARC_TLS_GD_DEF,
 
 
 /* ADI Blackfin 16 bit immediate absolute reloc.  */

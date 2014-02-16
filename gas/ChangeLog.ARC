@@ -1,6 +1,14 @@
+2014-02-16  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* config/tc-arc.c (md_apply_fix): Handle BFD_RELOC_ARC_TLS_GD_DEF.
+	(arc_extra_reloc): Likewise.
+	(md_pseudo_table): Add tls_gd_def.
+	* config/tc-arc.h (EXTERN_FORCE_RELOC): Force
+	BFD_RELOC_TLS_GD_DEF relocs.
+
 2014-02-14  Joern Rennecke  <joern.rennecke@embecosm.com>
 
-	* tc-arc.c (md_apply_fix) <BFD_RELOC_ARC_TLS_DTPOFF{,_S9}>:
+	* config/tc-arc.c (md_apply_fix) <BFD_RELOC_ARC_TLS_DTPOFF{,_S9}>:
 	Install addend in code segment.  Allow relocation to be done.
 	(tc_gen_reloc) <BFD_RELOC_ARC_TLS_DTPOFF{,_S9}>: Store fx_subsy
 	in addend.
