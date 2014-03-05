@@ -1,3 +1,8 @@
+2014-03-05  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* elf32-arc.c (elf_arc_check_relocs): Check tls_type before
+	considering ah->u.next_deferred.
+
 2014-02-16  Joern Rennecke  <joern.rennecke@embecosm.com>
 
 	* reloc.c (RELOC_ARC_TLS_GD_DEF): New enum value.
