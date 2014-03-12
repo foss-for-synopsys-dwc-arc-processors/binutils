@@ -1,3 +1,8 @@
+2014-03-12 Claudiu Zissulescu <claziss@synopsys.com>
+
+	* elf32-arc.c (elf_arc_relocate_section): Selective truncate
+          the last bits for pc relative relocations.
+
 2013-11-22 Claudiu Zissulescu <claziss@synopsys.com>
 
 	* elf32-arc.c (arc_elf_merge_private_bfd_data): Hard error if
