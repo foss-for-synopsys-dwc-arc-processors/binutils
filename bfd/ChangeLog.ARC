@@ -19,6 +19,11 @@
           arc_elf_print_private_bfd_data(). Give warning if we link
           two objects having different elf flags.
 
+2013-11-06  Anton Kolesov  <anton.kolesov@synopsys.com>
+
+	* elf32-arc.c (elf_backend_can_gc_sections): Set to 0, because
+	--gc-sections causes known troubles for ARC.
+
 2013-09-17 Anton Kolesov <akolesov@synopsys.com>
 
 	* elf32-arc.c (elf32_arc_grok_prstatus): Fix compiler error intruduced in
