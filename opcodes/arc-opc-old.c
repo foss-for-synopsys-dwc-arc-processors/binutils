@@ -947,6 +947,18 @@ static const struct arc_operand arc_operands_ac[] =
   { 145, 8, 17, ARC_OPERAND_FAKE | ARC_OPERAND_ERROR | ARC_OPERAND_RELATIVE_BRANCH | ARC_OPERAND_SIGNED | ARC_OPERAND_2BYTE_ALIGNED,
     insert_Ybit_neg, 0 },
 
+  /* register A for 64 bit ops. */
+#define ARCV2_REGA_64 (ARCV2_TFLAGFINBR+1)
+  { '=', 6, ARC_SHIFT_REGA_AC, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, 0 },
+
+  /* register B used for 64-bit ops */
+#define ARCV2_REGB_64 (ARCV2_REGA_64 + 1)
+  { ';', 6, ARC_SHIFT_REGB_LOW_AC, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, 0 },
+
+  /* register C used for 64-bit ops */
+#define ARCV2_REGC_64 (ARCV2_REGB_64 + 1)
+  { '_', 6, ARC_SHIFT_REGC_AC, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, 0 },
+
 /* end of list place holder */
   { 0, 0, 0, 0, 0, 0 }
 };
@@ -1566,6 +1578,33 @@ insert_reg (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 		  insn |= (reg->value & 0x18);
 		}
 	    }
+	  else if (!arc_mach_a4 && (operand->fmt == '=' || operand->fmt == '_'))
+	    {
+	      if ((reg->value % 2) == 1 )
+		{
+		  sprintf (buf, _("invalid register number `%d'"), reg->value);
+		  *errmsg = buf;
+		}
+	      else
+		{
+		  /* A (64 bit) class*/
+		  insn |= (reg->value & 0x3E) << operand->shift;
+		}
+	    }
+	  else if (!arc_mach_a4 && (operand->fmt == ';'))
+	    {
+	      if ((reg->value % 2) == 1 )
+		{
+		  sprintf (buf, _("invalid register number `%d'"), reg->value);
+		  *errmsg = buf;
+		}
+	      else
+		{
+		  /* A (64 bit) class*/
+		  insn |= (reg->value & 0x6) << operand->shift;
+		  insn |= (reg->value >> 3) << ARC_SHIFT_REGB_HIGH_AC;
+		}
+	    }
 	  else
 	    insn |= reg->value << operand->shift;
           op_type = OP_REG;
@@ -2120,7 +2159,7 @@ insert_ld_syntax (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 	      *errmsg = _("ld operand error: Privilege Violation exception");
 	    }
 	}
-      if (cpu_type == ARC_MACH_ARCV2 && arc_user_mode_only && ac_reg_num == 29)
+      if ((cpu_type & ARC_MACH_ARCV2) && arc_user_mode_only && (ac_reg_num == 29))
 	{
 	  *errmsg = _("ld operand error: Privilege Violation exception");
 	}
@@ -2202,7 +2241,7 @@ insert_ex_syntax (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 	  && !((arc_ld_ext_mask >> (ac_reg_num - 32)) & 1))
 	*errmsg = _("ld operand error: Instruction Error exception");
     }
-  else if (cpu_type == ARC_MACH_ARCV2)
+  else if (cpu_type & ARC_MACH_ARCV2)
     {
       if (arc_user_mode_only && ac_reg_num == 29)
 	{
@@ -4570,6 +4609,7 @@ static const struct arc_operand_value arc_reg_names_em[] =
   { "gp", 26, REG_AC, 0 }, { "fp", 27, REG_AC, 0 }, { "sp", 28, REG_AC, 0 },
   { "ilink", 29, REG_AC, 0 },
   { "blink", 31, REG_AC, 0 },
+  { "r58", 58, REG_AC, 0 }, { "r59", 59, REG_AC, 0 },
   { "lp_count", 60, REG_AC, 0 }, { "r60", 60, REG_AC, 0 },
   { "pcl", 63, REG_AC, ARC_REGISTER_READONLY },
   { "r63", 63, REG_AC, ARC_REGISTER_READONLY },
@@ -4844,7 +4884,8 @@ arc_get_opcode_mach (int bfd_mach, int big_p)
       ARC_MACH_ARC6,
       ARC_MACH_ARC7,
       ARC_MACH_ARC601,
-      ARC_MACH_ARCV2
+      ARC_MACH_ARCV2,
+      ARC_MACH_ARCV2 | ARC_MACH_ARCV2HS
     };
 
   return mach_type_map[bfd_mach] | (big_p ? ARC_MACH_BIG : 0);
@@ -4925,7 +4966,7 @@ arc_opcode_init_tables (int flags)
 	      arc_reg_names       = arc_reg_names_a700;
 	      arc_reg_names_count = ELEMENTS_IN(arc_reg_names_a700);
 	    }
-	  else if (ARC_OPCODE_CPU(flags) == ARC_MACH_ARCV2)
+	  else if (ARC_OPCODE_CPU(flags) & ARC_MACH_ARCV2)
 	    {
 	      arc_reg_names       = arc_reg_names_em;
 	      arc_reg_names_count = ELEMENTS_IN(arc_reg_names_em);
@@ -5457,6 +5498,9 @@ ac_register_operand (const struct arc_operand *op)
       case 130: /* R2 */
       case 131: /* R3 */
       case 140: /* G5 */
+      case '=': /* A 64 */
+      case '_': /* A 64 */
+      case ';': /* A 64 */
         return 1;
     }
     return 0;
