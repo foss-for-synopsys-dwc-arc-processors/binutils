@@ -1,3 +1,28 @@
+2014-02-05  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* gas/arc/tls-3.s, gas/arc/tls-3.d: New test.
+	* gas/arc/arc700.exp: Run it.
+
+2014-01-22  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* gas/arc/tls-2.s, gas/arc/tls-2.d: New test.
+	* gas/arc/arc700.exp: Run it.
+
+2014-01-16  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* gas/arc/tls.s, gas/arc/tls.d: New test.
+	* gas/arc/arc700.exp: Run it.
+
+2014-01-14  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* gas/arc/warn.s: Adjust for change of default from Arctangent-A4 to
+	Arctangent-A5.
+
+2013-12-14  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* gas/arc/pcl.s, gas/arc/pcl.d: New test.
+	* gas/arc/arc700.exp: Run it.
+
 2013-06-14  Claudiu Zissulescu <claziss@synopsys.com>
 
 	* gas/arc/warn.exp: Extend script for errors and warnings

@@ -91,7 +91,7 @@ extern int arc_parse_name (const char *, struct expressionS *);
  * the @ character.  */
 /* #define ENFORCE_AT_PREFIX */
 
-#define DWARF2_LINE_MIN_INSN_LENGTH (arc_mach_a4 ? 4 : 2)
+#define DWARF2_LINE_MIN_INSN_LENGTH (2)
 
 /* Values passed to md_apply_fix don't include the symbol value.  */
 #define MD_APPLY_SYM_VALUE(FIX) 0
@@ -99,6 +99,19 @@ extern int arc_parse_name (const char *, struct expressionS *);
 /* No shared lib support, so we don't need to ensure externally
    visible symbols can be overridden.  */
 #define EXTERN_FORCE_RELOC 0
+
+/* BFD_RELOC_ARC_TLS_GD_LD may use fx_subsy to store a label that is
+   later turned into fx_offset.  */
+#define TC_FORCE_RELOCATION_SUB_LOCAL(FIX, SEG) \
+  ((FIX)->fx_r_type == BFD_RELOC_ARC_TLS_GD_LD)
+
+#define TC_VALIDATE_FIX_SUB(FIX, SEG) \
+  ((md_register_arithmetic || (SEG) != reg_section) \
+   && ((FIX)->fx_r_type == BFD_RELOC_GPREL32 \
+       || (FIX)->fx_r_type == BFD_RELOC_GPREL16 \
+       || (FIX)->fx_r_type == BFD_RELOC_ARC_TLS_DTPOFF \
+       || (FIX)->fx_r_type == BFD_RELOC_ARC_TLS_DTPOFF_S9 \
+       || TC_FORCE_RELOCATION_SUB_LOCAL (FIX, SEG)))
 
 #include "opcode/arc.h" /* for arc_insn */
 
@@ -141,18 +154,15 @@ extern int arc_frob_symbol (struct symbol *);
 /* To handle alignment.  */
 /* Used to restrict the amount of memory allocated for representing
    the alignment code.  */
-#define MAX_MEM_FOR_RS_ALIGN_CODE (arc_mach_a4 ? 3+4 : 1+2)
+#define MAX_MEM_FOR_RS_ALIGN_CODE (1+2)
 /* HANDLE_ALIGN called after all the assembly has been done,
    so we can fill in all the rs_align_code type frags with
    nop instructions.  */
 #define HANDLE_ALIGN(FRAGP)	 arc_handle_align(FRAGP)
 extern void arc_handle_align (fragS* fragP);
 
-/* To handle the variability of the pcl value, we need to be able
-   to express things like (.&2) .  */
-#define md_optimize_expr(l,o,r) arc_optimize_expr (l, o, r)
-extern int arc_optimize_expr (expressionS *, operatorT, expressionS *);
-
+extern long md_pcrel_from_section (struct fix *, segT);
+#define MD_PCREL_FROM_SECTION(FIXP, SEC) md_pcrel_from_section (FIXP,SEC)
 
 /* register class field size in extension section */
 #define RCLASS_SET_SIZE 4
