@@ -1,3 +1,9 @@
+2014-05-19  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* config/tc-arc.c (md_apply_fix) <BFD_RELOC_ARC_TLS_LE_32>:
+	Handle like BFD_RELOC_ARC_TLS_DTPOFF.
+	<BFD_RELOC_ARC_TLS_LE_S9>: Handle like BFD_RELOC_ARC_TLS_DTPOFF_S9.
+
 2014-02-16  Joern Rennecke  <joern.rennecke@embecosm.com>
 
 	* config/tc-arc.c (md_apply_fix): Handle BFD_RELOC_ARC_TLS_GD_DEF.
