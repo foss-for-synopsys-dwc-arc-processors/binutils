@@ -2857,12 +2857,55 @@ elf_arc_relocate_section (bfd *output_bfd,
 	    break;
 	  }
 
+	asection *b_sec;
+	unsigned long b_symndx;
+
 	case R_ARC_TLS_LE_32:
 	case R_ARC_TLS_LE_S9:
 	  /* The value we have is inside the .tbss section; we want
 	     it to be relative to the thread pointer.  */
 	  relocation += TCB_BASE_OFFSET + TCB_SIZE;
-	  /* Fall through.  */
+
+	  b_symndx = rel->r_addend;
+	  if (b_symndx < symtab_hdr->sh_info)
+	    {
+	      /* This is a local symbol.  */
+	      Elf_Internal_Sym *b_sym = local_syms + b_symndx;
+	      b_sec = local_sections[b_symndx];
+	      if (!(b_sec->flags & SEC_THREAD_LOCAL))
+		{
+		  (*_bfd_error_handler)
+		    ("%s: Error: TLS LE relocation against symbol `%s' from %s section",
+		     bfd_get_filename (input_bfd),
+		     bfd_elf_sym_name (input_bfd, symtab_hdr, b_sym, b_sec),
+		     bfd_get_section_name (input_bfd, b_sec));
+		  return FALSE;
+		}
+	    }
+	  else
+	    {
+	      /* Global symbol.  */
+	      /* get the symbol's entry in the symtab */
+	      struct elf_link_hash_entry *b_h
+		= sym_hashes[b_symndx - symtab_hdr->sh_info];
+	      while (b_h->root.type == bfd_link_hash_indirect
+		     || b_h->root.type == bfd_link_hash_warning)
+		b_h = (struct elf_link_hash_entry *) b_h->root.u.i.link;
+	      BFD_ASSERT ((b_h->dynindx == -1) >= (b_h->forced_local != 0));
+	      b_sec = b_h->root.u.def.section;
+	      if (!(b_sec->flags & SEC_THREAD_LOCAL))
+		{
+		  (*_bfd_error_handler)
+		    ("%s: Error: TLS LE relocation against symbol `%s' from %s section",
+		     bfd_get_filename (input_bfd), b_h->root.root.string,
+		     bfd_get_section_name (input_bfd, b_sec));
+		  return FALSE;
+		}
+	    }
+
+	  BFD_ASSERT (elf_hash_table (info)->tls_sec);
+	  relocation -= elf_hash_table (info)->tls_sec->output_section->vma;
+	  break;
 
 	case R_ARC_TLS_DTPOFF:
 	case R_ARC_TLS_DTPOFF_S9:
@@ -2875,8 +2918,7 @@ elf_arc_relocate_section (bfd *output_bfd,
 	      relocation -= elf_hash_table (info)->tls_sec->output_section->vma;
 	      break;
 	    }
-	  asection *b_sec;
-	  unsigned long b_symndx = rel->r_addend;
+	  b_symndx = rel->r_addend;
 	  /* Now find the base symbol that's encoded in the addend.  */
 	  if (b_symndx < symtab_hdr->sh_info)
 	    {

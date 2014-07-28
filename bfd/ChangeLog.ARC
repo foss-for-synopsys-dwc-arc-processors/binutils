@@ -1,3 +1,8 @@
+2014-07-28  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* elf32-arc.c (elf_arc_relocate_section) <R_ARC_TLS_LE_{32,S9}>:
+	Don't fall through; emit error for NON-TLS symbol.
+
 2014-05-19  Joern Rennecke  <joern.rennecke@embecosm.com>
 
 	* elf32-arc.c (arc_plugin_one_reloc) <R_ARC_TLS_LE_32>: Use value of
